@@ -1,26 +1,29 @@
-name: CI
+name: Coverage Report
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20
-    - run: npm ci
-    - name: Install the browsers
-      run: npx playwright install --with-deps
-    - name: Run end-to-end tests
-      run: npm test
-    - run: npx nyc report --reporter=lcovonly
-    - name: Upload to Coveralls
-      uses: coverallsapp/github-action@v2
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
 
+jobs:
+  test-and-publish-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run tests with coverage
+        run: npm test
+        env:
+          NODE_OPTIONS: '--openssl-legacy-provider'
+      - name: Generate HTML coverage report
+        run: npx nyc report --reporter=html
+      - name: Upload coverage to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: coverage
+          branch: gh-pages
+          clean: true
