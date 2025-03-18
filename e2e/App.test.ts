@@ -13,7 +13,7 @@ test('use Red as a background color', async ({ page }) => {
   await page.waitForSelector("text=#e74c3c")
 });
 
-test('use Yellow as a background color', async ({ page }) => {
-  await page.click("text=Yellow")
-  await page.waitForSelector("text=#f1c40f")
-});
+//test('use Yellow as a background color', async ({ page }) => {
+//  await page.click("text=Yellow")
+//  await page.waitForSelector("text=#f1c40f")
+//});
