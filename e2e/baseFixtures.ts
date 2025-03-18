@@ -9,6 +9,17 @@ export function generateUUID(): string {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// Delete the .nyc_output directory if it exists
+function cleanupCoverageDir() {
+  if (fs.existsSync(istanbulCLIOutput)) {
+    fs.rmSync(istanbulCLIOutput, { recursive: true, force: true });
+    console.log(`Deleted existing .nyc_output folder`);
+  }
+}
+
+// Clean up before the first test runs
+cleanupCoverageDir();
+
 export const test = baseTest.extend({
   context: async ({ context }, use) => {
     await context.addInitScript(() =>
