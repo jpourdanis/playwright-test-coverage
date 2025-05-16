@@ -1,3 +1,11 @@
+/**
+ * Converts a hexadecimal color string to RGB values
+ * @param hex - The hexadecimal color string (with or without '#' prefix)
+ * @returns An object containing the RGB values
+ * @example
+ * convertHexToRGB('#1abc9c') // returns { red: 26, green: 188, blue: 156 }
+ * convertHexToRGB('1abc9c')  // returns { red: 26, green: 188, blue: 156 }
+ */
 export function convertHexToRGB(hex) {
   // Remove the '#' if it's included in the input
   hex = hex.replace(/^#/, "");
@@ -15,6 +23,14 @@ export function convertHexToRGB(hex) {
   };
 }
 
+/**
+ * Extracts a hexadecimal color code from a text string
+ * @param text - The text string containing a hex color code (format: #XXXXXX)
+ * @returns The hex color code without the '#' prefix, or null if no valid hex color is found
+ * @example
+ * extractHexColor('Current color: #1abc9c') // returns '1abc9c'
+ * extractHexColor('No color here')          // returns null
+ */
 export function extractHexColor(text) {
   const hexMatch = text.match(/#([0-9a-fA-F]{6})/);
   if (hexMatch) {

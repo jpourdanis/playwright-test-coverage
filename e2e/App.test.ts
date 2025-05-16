@@ -14,6 +14,15 @@ let TurquoiseColor: Color = { name: "Turquoise", hex: "1abc9c" };
 let RedColor: Color = { name: "Red", hex: "e74c3c" };
 let YellowColor: Color = { name: "Yellow", hex: "f1c40f" };
 
+/**
+ * Test: Verify that Turquoise is set as the default background color
+ * Steps:
+ * 1. Get the current color text from the page
+ * 2. Extract the hex code from the current color placeholder
+ * 3. Verify it matches the expected Turquoise hex code
+ * 4. Convert hex to RGB for CSS validation
+ * 5. Verify the header background color of the page matches the RGB values
+ */
 test("check Turquoise ( #1abc9c) is the default background color.", async ({
   page,
 }) => {
