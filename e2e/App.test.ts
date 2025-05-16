@@ -29,8 +29,8 @@ test("check Turquoise ( #1abc9c) is the default background color.", async ({
   );
 });
 
-// test("use Red ( #e74c3c) as a background color", async ({ page }) => {
-//   await page.click("text=Red");
+// test("use Red ( #e74c3c) as a background color.", async ({ page }) => {
+//   await page.click(`text=${RedColor.name}`);
 
 //   let currentColorText = await page
 //     .locator("text=Current color:")
@@ -44,8 +44,8 @@ test("check Turquoise ( #1abc9c) is the default background color.", async ({
 //   );
 // });
 
-// test("use Yellow ( #f1c40f) as a background color", async ({ page }) => {
-//   await page.click("text=Yellow");
+// test("use Yellow ( #f1c40f) as a background color.", async ({ page }) => {
+//   await page.click(`text=${YellowColor.name}`);
 
 //   let currentColorText = await page
 //     .locator("text=Current color:")
