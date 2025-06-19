@@ -38,32 +38,47 @@ test("check Turquoise ( #1abc9c) is the default background color.", async ({
   );
 });
 
-// test("use Red ( #e74c3c) as a background color.", async ({ page }) => {
-//   await page.click(`text=${RedColor.name}`);
+test("use Red ( #e74c3c) as a background color.", async ({ page }) => {
+  await page.click(`text=${RedColor.name}`);
 
-//   let currentColorText = await page
-//     .locator("text=Current color:")
-//     .textContent();
-//   let hex = extractHexColor(currentColorText);
-//   expect(hex).toBe(RedColor.hex);
-//   let rgbColors = convertHexToRGB(`#${hex}`);
-//   await expect(page.locator("header")).toHaveCSS(
-//     "background-color",
-//     `rgb(${rgbColors.red}, ${rgbColors.green}, ${rgbColors.blue})`
-//   );
-// });
+  let currentColorText = await page
+    .locator("text=Current color:")
+    .textContent();
+  let hex = extractHexColor(currentColorText);
+  expect(hex).toBe(RedColor.hex);
+  let rgbColors = convertHexToRGB(`#${hex}`);
+  await expect(page.locator("header")).toHaveCSS(
+    "background-color",
+    `rgb(${rgbColors.red}, ${rgbColors.green}, ${rgbColors.blue})`
+  );
+});
 
-// test("use Yellow ( #f1c40f) as a background color.", async ({ page }) => {
-//   await page.click(`text=${YellowColor.name}`);
+test("use Yellow ( #f1c40f) as a background color.", async ({ page }) => {
+  await page.click(`text=${YellowColor.name}`);
 
-//   let currentColorText = await page
-//     .locator("text=Current color:")
-//     .textContent();
-//   let hex = extractHexColor(currentColorText);
-//   expect(hex).toBe(YellowColor.hex);
-//   let rgbColors = convertHexToRGB(`#${hex}`);
-//   await expect(page.locator("header")).toHaveCSS(
-//     "background-color",
-//     `rgb(${rgbColors.red}, ${rgbColors.green}, ${rgbColors.blue})`
-//   );
-// });
+  let currentColorText = await page
+    .locator("text=Current color:")
+    .textContent();
+  let hex = extractHexColor(currentColorText);
+  expect(hex).toBe(YellowColor.hex);
+  let rgbColors = convertHexToRGB(`#${hex}`);
+  await expect(page.locator("header")).toHaveCSS(
+    "background-color",
+    `rgb(${rgbColors.red}, ${rgbColors.green}, ${rgbColors.blue})`
+  );
+});
+
+test("use Turquoise ( #1abc9c) as a background color.", async ({ page }) => {
+  await page.click(`text=${TurquoiseColor.name}`);
+
+  let currentColorText = await page
+    .locator("text=Current color:")
+    .textContent();
+  let hex = extractHexColor(currentColorText);
+  expect(hex).toBe(TurquoiseColor.hex);
+  let rgbColors = convertHexToRGB(`#${hex}`);
+  await expect(page.locator("header")).toHaveCSS(
+    "background-color",
+    `rgb(${rgbColors.red}, ${rgbColors.green}, ${rgbColors.blue})`
+  );
+});
