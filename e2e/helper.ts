@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 /**
  * Converts a hexadecimal color string to RGB values
  * @param hex - The hexadecimal color string (with or without '#' prefix)
@@ -37,4 +38,13 @@ export function extractHexColor(text) {
     return hexMatch[1];
   }
   return null;
+}
+
+/**
+ * Generates a unique identifier for coverage files
+ * @returns A 32-character hexadecimal string
+ * @example generateUUID() // returns "1a2b3c4d5e6f7890..."
+ */
+export function generateUUID(): string {
+  return crypto.randomBytes(16).toString("hex");
 }

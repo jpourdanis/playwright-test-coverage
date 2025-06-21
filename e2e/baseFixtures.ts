@@ -1,22 +1,13 @@
 import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
 import { test as baseTest } from "@playwright/test";
+import { generateUUID } from "./helper";
 
 /**
  * Directory where Istanbul will store coverage data
  * Uses the current working directory to create a .nyc_output folder
  */
 const istanbulCLIOutput = path.join(process.cwd(), ".nyc_output");
-
-/**
- * Generates a unique identifier for coverage files
- * @returns A 32-character hexadecimal string
- * @example generateUUID() // returns "1a2b3c4d5e6f7890..."
- */
-export function generateUUID(): string {
-  return crypto.randomBytes(16).toString("hex");
-}
 
 /**
  * Removes the existing coverage directory if it exists
