@@ -32,7 +32,7 @@ test("check Turquoise ( #1abc9c) is the default background color.", async ({
     .locator("text=Current color:")
     .textContent();
   let hex = extractHexColor(currentColorText);
-  expect(hex).toBe(colors[0].hex);
+  expect(hex).toBe(colors.find(c => c.name === "Turquoise")?.hex);
   let rgbColors = convertHexToRGB(`#${hex}`);
   await expect(page.locator("header")).toHaveCSS(
     "background-color",
