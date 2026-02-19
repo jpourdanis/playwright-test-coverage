@@ -78,6 +78,20 @@ jobs:
         run: |
           # Passing UID/GID variables to allow our container user to be the same as the host
 
+          # Ensure snapshot and test-results dirs exist on the host so the container
+          # can read/write them via the volume mounts.
+          mkdir -p e2e/snapshots
+          mkdir -p test-results
+
+          # If there are no baseline snapshots present, generate them first so the
+          # visual regression run in the container has a baseline to compare to.
+          if [ -z "$(ls -A e2e/snapshots 2>/dev/null)" ]; then
+            echo "No baseline snapshots found — generating baseline snapshots in Docker"
+            docker compose run --rm playwright npx playwright test --update-snapshots
+          else
+            echo "Baseline snapshots present — running visual regression tests"
+          fi
+
           docker compose run --rm playwright
       - name: Extract test-results from Docker volume (if present)
         if: always()
