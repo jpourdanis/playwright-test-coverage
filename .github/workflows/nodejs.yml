@@ -68,16 +68,9 @@ jobs:
           mkdir -p e2e/snapshots
           mkdir -p test-results
 
-          # If there are no baseline image snapshots present, generate them first
-          # so the visual regression run in the container has a baseline to
-          # compare to. Check for PNG files (typical Playwright image snapshots)
-          if ls e2e/snapshots/*.png 1> /dev/null 2>&1; then
-            echo "Baseline snapshots present — running visual regression tests"
-          else
-            echo "No baseline image snapshots found — generating baseline snapshots in Docker"
-            docker compose run --rm playwright npx playwright test --update-snapshots
-          fi
-
+          # Run visual regression tests in the Playwright container. Baseline
+          # snapshots should be committed to the repo beforehand; do not
+          # auto-generate or update snapshots in CI to avoid accidental changes.
           docker compose run --rm playwright
 
       - name: Save docker-compose logs
