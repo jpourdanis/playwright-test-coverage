@@ -24,12 +24,6 @@ jobs:
 
       - name: Start app service (Docker Compose)
         run: |
-          echo "DOCKER_UID=$(id -u)" >> $GITHUB_ENV
-          echo "DOCKER_GID=$(id -g)" >> $GITHUB_ENV
-          mkdir -p $GITHUB_WORKSPACE/app/e2e/snapshots
-          mkdir -p $GITHUB_WORKSPACE/app/test-results
-          mkdir -p $GITHUB_WORKSPACE/.nyc_output
-          mkdir -p e2e/snapshots test-results
           docker compose up -d --build app
 
       - name: Wait for http://localhost:3000 to be ready
@@ -59,15 +53,6 @@ jobs:
             echo "lcov_present=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Debug LCOV when missing
-        if: steps.check_lcov.outputs.lcov_present == 'false'
-        run: |
-          echo "coverage/lcov.info is missing or empty"
-          echo "Contents of .nyc_output:" || true
-          ls -la .nyc_output || true
-          for f in .nyc_output/*.json; do echo '---' $f; head -c 200 "$f" || true; done
-          echo '--- end .nyc_output'
-
       - name: Upload host-run coverage to Coveralls
         if: steps.check_lcov.outputs.lcov_present == 'true'
         uses: coverallsapp/github-action@master
@@ -83,28 +68,17 @@ jobs:
           mkdir -p e2e/snapshots
           mkdir -p test-results
 
-          # If there are no baseline snapshots present, generate them first so the
-          # visual regression run in the container has a baseline to compare to.
-          if [ -z "$(ls -A e2e/snapshots 2>/dev/null)" ]; then
-            echo "No baseline snapshots found — generating baseline snapshots in Docker"
-            docker compose run --rm playwright npx playwright test --update-snapshots
-          else
+          # If there are no baseline image snapshots present, generate them first
+          # so the visual regression run in the container has a baseline to
+          # compare to. Check for PNG files (typical Playwright image snapshots)
+          if ls e2e/snapshots/*.png 1> /dev/null 2>&1; then
             echo "Baseline snapshots present — running visual regression tests"
+          else
+            echo "No baseline image snapshots found — generating baseline snapshots in Docker"
+            docker compose run --rm playwright npx playwright test --update-snapshots
           fi
 
           docker compose run --rm playwright
-      - name: Extract test-results from Docker volume (if present)
-        if: always()
-        run: |
-          set -e
-          echo "Looking for a volume containing 'test-results'..."
-          VOL=$(docker volume ls --format '{{.Name}}' | grep test-results | head -n1 || true)
-          if [ -n "$VOL" ]; then
-            echo "Found volume: $VOL, copying contents to $GITHUB_WORKSPACE/test-results"
-            docker run --rm -v "$VOL":/v -v "$GITHUB_WORKSPACE":/host alpine sh -c 'cp -r /v /host/test-results || true'
-          else
-            echo "No test-results volume found"
-          fi
 
       - name: Save docker-compose logs
         if: always()
