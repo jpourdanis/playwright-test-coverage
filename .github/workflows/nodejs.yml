@@ -29,6 +29,7 @@ jobs:
           mkdir -p $GITHUB_WORKSPACE/app/e2e/snapshots
           mkdir -p $GITHUB_WORKSPACE/app/test-results
           mkdir -p $GITHUB_WORKSPACE/.nyc_output
+          mkdir -p e2e/snapshots test-results
           docker compose up -d --build app
 
       - name: Wait for http://localhost:3000 to be ready
