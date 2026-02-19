@@ -44,14 +44,33 @@ jobs:
         run: npx nyc report --reporter=lcovonly
 
       - name: Upload host-run coverage to Coveralls
+        id: check_lcov
+        run: |
+          if [ -f coverage/lcov.info ] && [ -s coverage/lcov.info ]; then
+            echo "lcov_present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "lcov_present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Debug LCOV when missing
+        if: steps.check_lcov.outputs.lcov_present == 'false'
+        run: |
+          echo "coverage/lcov.info is missing or empty"
+          echo "Contents of .nyc_output:" || true
+          ls -la .nyc_output || true
+          for f in .nyc_output/*.json; do echo '---' $f; head -c 200 "$f" || true; done
+          echo '--- end .nyc_output'
+
+      - name: Upload host-run coverage to Coveralls
+        if: steps.check_lcov.outputs.lcov_present == 'true'
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Playwright in Docker Compose (optional double-check)
+      - name: Run Playwright in Docker Compose for visual regression tests
         run: |
           mkdir -p $GITHUB_WORKSPACE/.nyc_output
-          docker compose run --rm -v $GITHUB_WORKSPACE/.nyc_output:/app/.nyc_output playwright --update-snapshots
+          docker compose run --rm playwright --update-snapshots
       - name: Extract test-results from Docker volume (if present)
         if: always()
         run: |
