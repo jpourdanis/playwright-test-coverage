@@ -26,8 +26,5 @@ services:
     # `docker-compose run --rm playwright` to execute tests, and pass extra
     # arguments to change behavior (e.g. `--update-snapshots`).
     volumes:
-      - snapshots:/app/e2e/snapshots
-      - test-results:/app/test-results
-volumes:
-  test-results:
-  snapshots:
+      - ./e2e/snapshots:/app/e2e/snapshots
+      - ./test-results:/app/test-results
