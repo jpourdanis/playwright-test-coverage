@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      target: app
+    ports:
+      - "3000:3000"
+    environment:
+      - USE_BABEL_PLUGIN_ISTANBUL=1
+      - NODE_OPTIONS=--openssl-legacy-provider
+
+  playwright:
+    build:
+      context: .
+      target: playwright
+    depends_on:
+      - app
+    environment:
+      - BASE_URL=http://app:3000
+      - CI=true
+    tty: true
+    stdin_open: true
+    user: root
+    # By default the playwright image will run `npx playwright test`. Use
+    # `docker-compose run --rm playwright` to execute tests, and pass extra
+    # arguments to change behavior (e.g. `--update-snapshots`).
+    volumes:
+      - ./e2e/snapshots:/app/e2e/snapshots:rw
+      - test-results:/app/test-results
+volumes:
+  test-results:

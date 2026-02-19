@@ -19,8 +19,10 @@
   "scripts": {
     "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-app-rewired start",
     "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-app-rewired build",
-    "test": "cross-env npx playwright test",
-    "coverage": "npm run test && nyc report --reporter=text"
+    "test": "cross-env npx playwright test e2e/App.test.ts",
+    "coverage": "npm run test && nyc report --reporter=text",
+    "test:e2e:docker": "docker-compose run --rm playwright",
+    "test:e2e:docker:update": "docker-compose run --rm playwright --update-snapshots"
   },
   "eslintConfig": {
     "extends": "react-app"

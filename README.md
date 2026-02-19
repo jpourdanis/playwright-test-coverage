@@ -25,6 +25,57 @@ Helpful commands are the following:
 - `npx nyc report --reporter=lcov` -> commonly used to upload to Coveralls or [Codecov](https://about.codecov.io/).
 - `npx nyc report --reporter=text` -> CLI output how the current code coverage per file and statement will look like.
 
+## Visual regression testing in Docker
+
+This repository can run Playwright visual-regression tests both locally and inside Docker. Running tests in Docker ensures a stable, hermetic environment for screenshots and makes CI runs reproducible.
+
+Why run visual tests in Docker?
+
+- Reproducible browser binaries and system libraries
+- Consistent rendering across developer machines and CI
+- Easier CI integration: the same container that runs locally runs in CI
+
+Quick start (local Docker via Colima / Docker Desktop):
+
+1. Start a docker daemon (Colima or Docker Desktop). Example with Colima:
+
+```bash
+brew install colima docker-compose
+colima start
+```
+
+2. (Optional) Create a local Docker config to avoid desktop credential helpers: `.docker-local/config.json`.
+3. Run the app in a container and the Playwright runner via Compose (this repo provides `docker-compose.yml`):
+
+```bash
+# run tests in the Playwright service
+DOCKER_CONFIG=$(pwd)/.docker-local DOCKER_HOST=unix:///Users/$USER/.colima/default/docker.sock \
+	docker-compose run --rm playwright
+```
+
+4. Update snapshots (create a new baseline) from the container:
+
+```bash
+DOCKER_CONFIG=$(pwd)/.docker-local DOCKER_HOST=unix:///Users/$USER/.colima/default/docker.sock \
+	docker-compose run --rm playwright --update-snapshots
+```
+
+Running tests locally without Docker:
+
+```bash
+npm test
+# or run a single test file
+npm run test -- e2e/App.test.ts
+```
+
+CI integration
+
+- The GitHub Actions workflow (`.github/workflows/nodejs.yml`) runs `npm test` then runs the Playwright service in Docker Compose so the same Docker-based checks run in CI.
+
+Notes
+
+- Host snapshot files are stored in `e2e/snapshots` and are mounted into the container so updates persist to the host when running `--update-snapshots`.
+- Local Docker config `.docker-local` is ignored by git (see `.gitignore`).
 
 # Understanding baseFixtures.ts: Istanbul Code Coverage for Playwright Tests
 

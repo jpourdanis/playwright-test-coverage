@@ -4,3 +4,4 @@
 /.nyc_output/
 /test-results/
 .DS_Store
+/.docker-local/
