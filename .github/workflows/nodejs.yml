@@ -74,7 +74,7 @@ jobs:
           echo "DOCKER_GID=$(id -g)" >> $GITHUB_ENV
           # Output directories created here will be owned by GH-runner
           # If we let docker compose create them as volumes instead, they'll be not writable
-          mkdir -p ./snapshots
+          mkdir -p ./e2e/snapshots
           mkdir -p ./test-results
           mkdir -p $GITHUB_WORKSPACE/.nyc_output
           docker compose run --rm playwright
