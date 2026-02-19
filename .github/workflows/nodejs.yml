@@ -23,7 +23,13 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Start app service (Docker Compose)
-        run: docker compose up -d --build app
+        run: |
+          echo "DOCKER_UID=$(id -u)" >> $GITHUB_ENV
+          echo "DOCKER_GID=$(id -g)" >> $GITHUB_ENV
+          mkdir -p $GITHUB_WORKSPACE/app/e2e/snapshots
+          mkdir -p $GITHUB_WORKSPACE/app/test-results
+          mkdir -p $GITHUB_WORKSPACE/.nyc_output
+          docker compose up -d --build app
 
       - name: Wait for http://localhost:3000 to be ready
         run: |
@@ -70,13 +76,7 @@ jobs:
       - name: Run Playwright in Docker Compose for visual regression tests
         run: |
           # Passing UID/GID variables to allow our container user to be the same as the host
-          echo "DOCKER_UID=$(id -u)" >> $GITHUB_ENV
-          echo "DOCKER_GID=$(id -g)" >> $GITHUB_ENV
-          # Output directories created here will be owned by GH-runner
-          # If we let docker compose create them as volumes instead, they'll be not writable
-          mkdir -p $GITHUB_WORKSPACE/app/e2e/snapshots
-          mkdir -p $GITHUB_WORKSPACE/app/test-results
-          mkdir -p $GITHUB_WORKSPACE/.nyc_output
+
           docker compose run --rm playwright
       - name: Extract test-results from Docker volume (if present)
         if: always()
