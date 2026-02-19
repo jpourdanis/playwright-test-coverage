@@ -7,7 +7,7 @@ import * as crypto from "crypto";
  * convertHexToRGB('#1abc9c') // returns { red: 26, green: 188, blue: 156 }
  * convertHexToRGB('1abc9c')  // returns { red: 26, green: 188, blue: 156 }
  */
-export function convertHexToRGB(hex) {
+export function convertHexToRGB(hex: any) {
   // Remove the '#' if it's included in the input
   hex = hex.replace(/^#/, "");
 
@@ -32,7 +32,7 @@ export function convertHexToRGB(hex) {
  * extractHexColor('Current color: #1abc9c') // returns '1abc9c'
  * extractHexColor('No color here')          // returns null
  */
-export function extractHexColor(text) {
+export function extractHexColor(text: any) {
   const hexMatch = text.match(/#([0-9a-fA-F]{6})/);
   if (hexMatch) {
     return hexMatch[1];
