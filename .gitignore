@@ -5,3 +5,4 @@
 /test-results/
 .DS_Store
 /.docker-local/
+.vscode/
