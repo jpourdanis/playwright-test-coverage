@@ -49,6 +49,39 @@ jobs:
           files: docker-compose.yml
           args: run --rm playwright
       - run: npx nyc report --reporter=lcovonly
+
+      - name: Extract test-results from Docker volume (if present)
+        if: always()
+        run: |
+          set -e
+          echo "Looking for a volume containing 'test-results'..."
+          VOL=$(docker volume ls --format '{{.Name}}' | grep test-results | head -n1 || true)
+          if [ -n "$VOL" ]; then
+            echo "Found volume: $VOL, copying contents to $GITHUB_WORKSPACE/test-results"
+            docker run --rm -v "$VOL":/v -v "$GITHUB_WORKSPACE":/host alpine sh -c 'cp -r /v /host/test-results || true'
+          else
+            echo "No test-results volume found"
+          fi
+
+      - name: Save docker-compose logs
+        if: always()
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/ci-logs
+          docker compose logs > $GITHUB_WORKSPACE/ci-logs/compose-logs.txt || true
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-artifacts
+          path: |
+            test-results/**
+            e2e/snapshots/**
+            playwright-report/**
+            coverage/**
+            .nyc_output/**
+            ci-logs/**
+
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
         with:
