@@ -15,8 +15,20 @@ const istanbulCLIOutput = path.join(process.cwd(), ".nyc_output");
  */
 function cleanupCoverageDir() {
   if (fs.existsSync(istanbulCLIOutput)) {
-    fs.rmSync(istanbulCLIOutput, { recursive: true, force: true });
-    console.log(`Deleted existing .nyc_output folder`);
+    try {
+      fs.rmSync(istanbulCLIOutput, { recursive: true, force: true });
+      console.log(`Deleted existing .nyc_output folder`);
+    } catch (err: any) {
+      // Ignore EBUSY or other transient filesystem errors when running
+      // inside containers where the directory may be mounted from the host
+      if (err && err.code === "EBUSY") {
+        console.warn(
+          `Could not remove .nyc_output (EBUSY). Proceeding without cleanup.`,
+        );
+      } else {
+        console.warn(`Could not remove .nyc_output: ${err?.message || err}`);
+      }
+    }
   }
 }
 
@@ -33,9 +45,9 @@ export const test = baseTest.extend({
     await context.addInitScript(() =>
       window.addEventListener("beforeunload", () =>
         (window as any).collectIstanbulCoverage(
-          JSON.stringify((window as any).__coverage__)
-        )
-      )
+          JSON.stringify((window as any).__coverage__),
+        ),
+      ),
     );
 
     // Create directory for coverage data
@@ -50,12 +62,12 @@ export const test = baseTest.extend({
           fs.writeFileSync(
             path.join(
               istanbulCLIOutput,
-              `playwright_coverage_${generateUUID()}.json`
+              `playwright_coverage_${generateUUID()}.json`,
             ),
-            coverageJSON
+            coverageJSON,
           );
         }
-      }
+      },
     );
 
     // Use the modified context in tests
@@ -65,8 +77,8 @@ export const test = baseTest.extend({
     for (const page of context.pages()) {
       await page.evaluate(() =>
         (window as any).collectIstanbulCoverage(
-          JSON.stringify((window as any).__coverage__)
-        )
+          JSON.stringify((window as any).__coverage__),
+        ),
       );
     }
   },
