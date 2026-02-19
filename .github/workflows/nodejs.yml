@@ -40,11 +40,18 @@ jobs:
       - name: Run end-to-end tests (host Playwright)
         run: npm test
 
+      - name: Generate LCOV from host-run coverage
+        run: npx nyc report --reporter=lcovonly
+
+      - name: Upload host-run coverage to Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Playwright in Docker Compose (optional double-check)
         run: |
           mkdir -p $GITHUB_WORKSPACE/.nyc_output
           docker compose run --rm -v $GITHUB_WORKSPACE/.nyc_output:/app/.nyc_output playwright --update-snapshots
-      - run: npx nyc report --reporter=lcovonly
       - name: Extract test-results from Docker volume (if present)
         if: always()
         run: |
@@ -76,8 +83,4 @@ jobs:
             coverage/**
             .nyc_output/**
             ci-logs/**
-
-      - name: Upload to Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # Coverage upload to Coveralls already performed after the host `npm test` step
