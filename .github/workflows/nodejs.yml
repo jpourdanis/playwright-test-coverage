@@ -69,6 +69,13 @@ jobs:
 
       - name: Run Playwright in Docker Compose for visual regression tests
         run: |
+          # Passing UID/GID variables to allow our container user to be the same as the host
+          echo "DOCKER_UID=$(id -u)" >> $GITHUB_ENV
+          echo "DOCKER_GID=$(id -g)" >> $GITHUB_ENV
+          # Output directories created here will be owned by GH-runner
+          # If we let docker compose create them as volumes instead, they'll be not writable
+          mkdir -p ./app/e2e/snapshots
+          mkdir -p ./app/test-results
           mkdir -p $GITHUB_WORKSPACE/.nyc_output
           docker compose run --rm playwright
       - name: Extract test-results from Docker volume (if present)
