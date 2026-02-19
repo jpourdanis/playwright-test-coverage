@@ -41,7 +41,9 @@ jobs:
         run: npm test
 
       - name: Run Playwright in Docker Compose (optional double-check)
-        run: docker compose run --rm playwright --update-snapshots
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/.nyc_output
+          docker compose run --rm -v $GITHUB_WORKSPACE/.nyc_output:/app/.nyc_output playwright
       - run: npx nyc report --reporter=lcovonly
 
       - name: Extract test-results from Docker volume (if present)
