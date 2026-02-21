@@ -25,58 +25,6 @@ Helpful commands are the following:
 - `npx nyc report --reporter=lcov` -> commonly used to upload to Coveralls or [Codecov](https://about.codecov.io/).
 - `npx nyc report --reporter=text` -> CLI output how the current code coverage per file and statement will look like.
 
-## Visual regression testing in Docker
-
-This repository can run Playwright visual-regression tests both locally and inside Docker. Running tests in Docker ensures a stable, hermetic environment for screenshots and makes CI runs reproducible.
-
-Why run visual tests in Docker?
-
-- Reproducible browser binaries and system libraries
-- Consistent rendering across developer machines and CI
-- Easier CI integration: the same container that runs locally runs in CI
-
-Quick start (local Docker via Colima / Docker Desktop):
-
-1. Start a docker daemon (Colima or Docker Desktop). Example with Colima:
-
-```bash
-brew install colima docker-compose
-colima start
-```
-
-2. (Optional) Create a local Docker config to avoid desktop credential helpers: `.docker-local/config.json`.
-3. Run the app in a container and the Playwright runner via Compose (this repo provides `docker-compose.yml`):
-
-```bash
-# run tests in the Playwright service
-DOCKER_CONFIG=$(pwd)/.docker-local DOCKER_HOST=unix:///Users/$USER/.colima/default/docker.sock \
-	docker-compose run --rm playwright
-```
-
-4. Update snapshots (create a new baseline) from the container:
-
-```bash
-DOCKER_CONFIG=$(pwd)/.docker-local DOCKER_HOST=unix:///Users/$USER/.colima/default/docker.sock \
-	docker-compose run --rm playwright --update-snapshots
-```
-
-Running tests locally without Docker:
-
-```bash
-npm test
-# or run a single test file
-npm run test -- e2e/App.test.ts
-```
-
-CI integration
-
-- The GitHub Actions workflow (`.github/workflows/nodejs.yml`) runs `npm test` then runs the Playwright service in Docker Compose so the same Docker-based checks run in CI.
-
-Notes
-
-- Host snapshot files are stored in `e2e/snapshots` and are mounted into the container so updates persist to the host when running `--update-snapshots`.
-- Local Docker config `.docker-local` is ignored by git (see `.gitignore`).
-
 # Understanding baseFixtures.ts: Istanbul Code Coverage for Playwright Tests
 
 ## What Does This File Do?
@@ -109,3 +57,76 @@ The baseFixtures.ts file is a specialized tool that adds code coverage tracking 
 - **Test Improvement**: Helps identify areas that need more test coverage
 - **Documentation**: Provides metrics you can share with your team
 - **CI/CD Integration**: Works with tools like Coveralls for coverage reporting
+
+## Visual Regression Testing
+
+### Introduction
+
+. While functional tests cover most interactions, we noticed that for some static pages—like FAQs or other content-heavy sections—visual testing adds real value. Even minor CSS changes or layout shifts can break the page in ways users notice, but automated functional tests often miss these subtle regressions.
+
+Visual testing lets us capture screenshots of key pages and automatically compare them against a reference, so we can catch unintended visual changes before they reach users. Playwright makes it easy to implement visual testing in just a few lines of code.
+
+### The challenge: different machines, different results
+
+This approach works on a single machine but may fail on another due to subtle rendering differences. Fonts, spacing, and other visual details vary between operating systems: Windows renders fonts differently than macOS, which renders differently than Linux. For visual tests this can cause false positives when running on different developer machines or CI.
+
+For example, a screenshot taken on a macOS laptop may fail if the same test runs on a Linux-based CI environment.
+
+### The solution: Docker
+
+Docker gives us a consistent environment so visual tests pass reliably everywhere. We build a Docker image on the official Playwright image (which includes browsers and needed system dependencies), install project dependencies, and copy the code into the image.
+
+Example Dockerfile (simplified):
+
+```dockerfile
+# Use the official Playwright image which includes browsers and deps
+FROM mcr.microsoft.com/playwright:v1
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+
+# Default command can run the Playwright test runner
+CMD ["npm", "test"]
+```
+
+### Docker Compose
+
+We use Docker Compose to make running visual tests easy and consistent. The Compose setup lets developers start everything with a single command and use the exact same setup in CI. Key points:
+
+- Defines a `playwright` service responsible for running tests.
+- Builds the Docker image using our `Dockerfile`.
+- Sets `/app` as the default working directory.
+- Mounts volumes for:
+  - Project directory — so the container can access source code without copying it every time.
+  - Screenshots — so new screenshots persist and visual diffs remain across container runs.
+  - Playwright reports — so test reports are available locally and as CI artifacts.
+
+This eliminates layout differences caused by varying screen sizes and makes visual diffs easy to review. After test execution, screenshots are saved in the `screenshots/` folder at the repository root (and snapshots/baselines are stored in `e2e/snapshots` where applicable).
+
+### Why it matters
+
+With this setup we catch real visual regressions while ignoring harmless OS-level differences. Docker guarantees a consistent testing environment and Playwright makes capturing and comparing screenshots straightforward. Our tests are therefore reliable, reproducible, and actionable—keeping the UI looking great everywhere.
+
+### Running visual tests locally
+
+You can run visual tests either directly on your machine (with Node and Playwright installed) or inside Docker for a consistent environment. The instructions below are OS-agnostic.
+
+Run using Docker (recommended for consistent CI results):
+
+- Ensure a Docker daemon is running (Docker Desktop, Colima, or another provider).
+
+- Build and run tests with Docker Compose:
+- Run the test suite: `npm run test:e2e:docker`
+- Update snapshot baselines: `npm run test:e2e:docker:update`
+
+Screenshots and snapshots
+
+- Visual diffs and screenshots are saved to the `screenshots/` folder at the repository root.
+- Baseline snapshots are stored in `e2e/snapshots` and are mounted by the Compose service so updates persist between runs.
+
+Tips
+
+- Use Docker for CI to avoid OS-specific font and rendering differences that cause false positives.
+- Only update snapshot baselines after reviewing diffs to avoid accepting unintended visual changes.
