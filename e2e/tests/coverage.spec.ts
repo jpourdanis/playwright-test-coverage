@@ -1,5 +1,5 @@
-import { test, expect } from "./baseFixtures";
-import { convertHexToRGB, extractHexColor } from "./helper";
+import { test, expect } from "../baseFixtures";
+import { convertHexToRGB, extractHexColor } from "../helper";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");

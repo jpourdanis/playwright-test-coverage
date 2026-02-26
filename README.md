@@ -5,83 +5,428 @@
 
 ![Demo Animation](demo.webp)
 
-This example demonstrates how to use [nyc](https://github.com/istanbuljs/nyc) to collect coverage data during runtime with your end-to-end tests which will be stored on the filesystem. When applying the shown parts, you are able to view the coverage report e.g. as HTML, or convert it to the `lcov` format for upload to [Coveralls](https://coveralls.io/) or other similar providers. In this example, we are using GitHub Actions to run the tests and upload them to Coveralls.
+A comprehensive reference project demonstrating **senior-level QA engineering best practices** using [Playwright](https://playwright.dev). This repository goes beyond simple end-to-end tests to showcase the patterns, architectures, and strategies that make a test suite **robust, maintainable, and scalable**.
 
-## Prerequisites
+## Table of Contents
 
-- The web application which you are using needs to have [nyc](https://github.com/istanbuljs/nyc) configured during the build process.
-- It's recommended to only enable it during end-to-end testing, for example by checking a variable to determine if it should be enabled.
-- You could also add it only when the dev server `NODE_ENV=development` is used.
+- [Best Practices Implemented](#best-practices-implemented)
+  - [1. Page Object Model (POM)](#1-page-object-model-pom)
+  - [2. Accessibility (a11y) Testing](#2-accessibility-a11y-testing)
+  - [3. Network Mocking & Interception](#3-network-mocking--interception)
+  - [4. Visual Regression & Responsive Testing](#4-visual-regression--responsive-testing)
+  - [5. Data-Driven Testing](#5-data-driven-testing)
+  - [6. E2E Code Coverage](#6-e2e-code-coverage)
+  - [7. Consistent Cross-Platform Testing with Docker](#7-consistent-cross-platform-testing-with-docker)
+- [Getting Started](#getting-started)
 
-## Usage
+---
 
-- Place [`baseFixtures.ts`](https://github.com/jpourdanis/playwright-test-coverage/blob/main/e2e/baseFixtures.ts) into your test directory. Instead of requiring `@playwright/test` to get the test object, use `./baseFixtures`.
-- This will collect the corresponding coverage files into the `.nyc_output` directory which can be used from the [Istanbul CLI](https://github.com/istanbuljs/nyc).
-- For an example test, see [App.test.ts](/e2e/App.test.ts)
+## Best Practices Implemented
 
-## Coverage formats
+### 1. Page Object Model (POM)
 
-Helpful commands are the following:
+**Files:** [`e2e/pages/HomePage.ts`](/e2e/pages/HomePage.ts) · [`e2e/tests/pom-refactored.spec.ts`](/e2e/tests/pom-refactored.spec.ts)
 
-- `npx nyc report --reporter=html` -> Writes an HTML report to `coverage/index.html`.
-- `npx nyc report --reporter=lcov` -> commonly used to upload to Coveralls or [Codecov](https://about.codecov.io/).
-- `npx nyc report --reporter=text` -> CLI output how the current code coverage per file and statement will look like.
+#### What is it?
 
-# Understanding baseFixtures.ts: Istanbul Code Coverage for Playwright Tests
+The Page Object Model is a design pattern that creates an abstraction layer between your tests and the page structure. Instead of scattering selectors like `page.locator("header")` across dozens of test files, you define them **once** inside a dedicated class.
 
-## What Does This File Do?
+#### Why it matters
 
-The baseFixtures.ts file is a specialized tool that adds code coverage tracking to your Playwright tests. In simple terms:
+- **Maintainability** — When a selector changes (e.g., a button class is renamed), you update it in **one place** instead of every test file that references it.
+- **Readability** — Tests read like user stories: `homePage.clickColorButton("Red")` is instantly understandable, even by non-engineers.
+- **Reusability** — The same page object is shared across multiple test suites, eliminating duplicated boilerplate.
 
-## 🔍 Main Purpose
+#### How to implement
 
-**It tracks which parts of your application code are actually used during testing.**
+**Step 1:** Create a page class with locators and actions:
 
-## 📊 How It Works in Simple Steps
+```typescript
+// e2e/pages/HomePage.ts
+import { Page, Locator } from "@playwright/test";
 
-1. **Setup**: Creates a folder called `.nyc_output` to store coverage data
-2. **Preparation**: Clears any old coverage data before tests start
-3. **During Tests**: Adds special listeners to your web application to track code execution
-4. **After Each Page**: Collects data about which lines of code were executed
-5. **After Tests**: Saves all this information as JSON files that tools like Istanbul can read
+export class HomePage {
+  readonly page: Page;
+  readonly header: Locator;
+  readonly currentColorText: Locator;
 
-## 🛠️ Key Features
+  constructor(page: Page) {
+    this.page = page;
+    this.header = page.locator("header");
+    this.currentColorText = page.locator("text=Current color:");
+  }
 
-- **Automatic Cleanup**: Removes old coverage data before starting new tests
-- **Event Watching**: Captures coverage when pages change or close
-- **Data Collection**: Grabs the `__coverage__` object that Istanbul adds to your application
-- **UUID Generation**: Creates unique filenames for each coverage report
-- **Playwright Integration**: Extends Playwright's test system without changing how you write tests
+  async goto() {
+    await this.page.goto("/");
+  }
 
-## 💡 Why It's Useful
+  async clickColorButton(colorName: string) {
+    await this.page.click(`text=${colorName}`);
+  }
+}
+```
 
-- **Quality Assurance**: Shows you which parts of your code aren't being tested
-- **Test Improvement**: Helps identify areas that need more test coverage
-- **Documentation**: Provides metrics you can share with your team
-- **CI/CD Integration**: Works with tools like Coveralls for coverage reporting
+**Step 2:** Use the page object in your tests:
 
-## Visual Regression Testing
+```typescript
+// e2e/tests/pom-refactored.spec.ts
+test.describe("POM Refactored: Background color tests", () => {
+  let homePage: HomePage;
 
-### Introduction
+  test.beforeEach(async ({ page }) => {
+    homePage = new HomePage(page);
+    await homePage.goto();
+  });
 
-. While functional tests cover most interactions, we noticed that for some static pages—like FAQs or other content-heavy sections—visual testing adds real value. Even minor CSS changes or layout shifts can break the page in ways users notice, but automated functional tests often miss these subtle regressions.
+  test("verify Red is applied as the background color", async () => {
+    await homePage.clickColorButton("Red");
+    const text = await homePage.getCurrentColorText();
+    // ... assertions
+  });
+});
+```
 
-Visual testing lets us capture screenshots of key pages and automatically compare them against a reference, so we can catch unintended visual changes before they reach users. Playwright makes it easy to implement visual testing in just a few lines of code.
+#### How to verify
 
-### The challenge: different machines, different results
+```bash
+npx playwright test e2e/tests/pom-refactored.spec.ts
+```
 
-This approach works on a single machine but may fail on another due to subtle rendering differences. Fonts, spacing, and other visual details vary between operating systems: Windows renders fonts differently than macOS, which renders differently than Linux. For visual tests this can cause false positives when running on different developer machines or CI.
+---
 
-For example, a screenshot taken on a macOS laptop may fail if the same test runs on a Linux-based CI environment.
+### 2. Accessibility (a11y) Testing
 
-### The solution: Docker
+**File:** [`e2e/tests/a11y.spec.ts`](/e2e/tests/a11y.spec.ts)
 
-Docker gives us a consistent environment so visual tests pass reliably everywhere. We build a Docker image on the official Playwright image (which includes browsers and needed system dependencies), install project dependencies, and copy the code into the image.
+#### What is it?
 
-Example Dockerfile (simplified):
+Automated accessibility auditing that scans your rendered DOM against the [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/WAI/standards-guidelines/wcag/). We use [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm/tree/develop/packages/playwright) — the same engine used by browser DevTools accessibility audits.
+
+#### Why it matters
+
+- **Inclusivity** — Ensures the application is usable by individuals with visual, motor, or cognitive disabilities.
+- **Legal compliance** — Many jurisdictions require WCAG AA compliance for public-facing web applications.
+- **Regression prevention** — A CSS refactor can silently break color contrast ratios. An automated a11y gate catches it before merge.
+- **Real bugs found** — In this project, the a11y tests uncovered actual contrast violations (white text on yellow/turquoise backgrounds) and missing semantic landmarks (`<main>`, `<h1>`) that were subsequently fixed.
+
+#### How to implement
+
+**Step 1:** Install the dependency:
+
+```bash
+npm install -D @axe-core/playwright
+```
+
+**Step 2:** Write a test that scans the page:
+
+```typescript
+// e2e/tests/a11y.spec.ts
+import AxeBuilder from "@axe-core/playwright";
+
+test("should not have any accessibility issues", async ({ page }) => {
+  await page.goto("/");
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+});
+```
+
+**Step 3:** Test accessibility **after state changes** too — a button click that changes the background color could introduce new contrast violations:
+
+```typescript
+test("should maintain accessibility after color change", async ({ page }) => {
+  await homePage.clickColorButton("Yellow");
+  const results = await new AxeBuilder({ page }).analyze();
+  const contrastViolations = results.violations.filter(
+    (v) => v.id === "color-contrast"
+  );
+  expect(contrastViolations).toEqual([]);
+});
+```
+
+#### How to verify
+
+```bash
+npx playwright test e2e/tests/a11y.spec.ts
+```
+
+If a violation is found, the output will include the exact rule ID (e.g., `color-contrast`), the failing HTML element, and the specific contrast ratio that failed.
+
+---
+
+### 3. Network Mocking & Interception
+
+**File:** [`e2e/tests/network-mocking.spec.ts`](/e2e/tests/network-mocking.spec.ts)
+
+#### What is it?
+
+Playwright's `page.route()` API allows you to intercept any network request and either **abort** it (simulating a failure) or **fulfill** it with custom data (mocking an API response).
+
+#### Why it matters
+
+- **Test isolation** — Tests don't depend on live APIs, databases, or third-party services. They run fast and never flake due to network issues.
+- **Edge case coverage** — You can simulate states that are difficult to reproduce naturally: API errors, empty responses, rate limits, or missing assets.
+- **Speed** — Mocked responses return instantly, dramatically reducing test execution time for API-heavy applications.
+
+#### How to implement
+
+**Aborting a request** (simulating a missing asset):
+
+```typescript
+test("should handle missing image gracefully", async ({ page }) => {
+  // Intercept and abort the logo request BEFORE navigating
+  await page.route("**/logo.svg", (route) => route.abort());
+  await page.goto("/");
+
+  // The image element should still exist in the DOM with its alt text
+  const logoImg = page.locator("img.App-logo");
+  await expect(logoImg).toHaveAttribute("alt", "logo");
+});
+```
+
+**Mocking an API response** (fulfilling with custom data):
+
+```typescript
+test("mock API response", async ({ page }) => {
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ defaultColor: "Red" }),
+    });
+  });
+  await page.goto("/");
+  // Assert the UI reflects the mocked data
+});
+```
+
+> **Important:** Always call `page.route()` *before* the action that triggers the network request (e.g., `page.goto()`).
+
+#### How to verify
+
+```bash
+npx playwright test e2e/tests/network-mocking.spec.ts
+```
+
+---
+
+### 4. Visual Regression & Responsive Testing
+
+**File:** [`e2e/tests/visual.spec.ts`](/e2e/tests/visual.spec.ts)
+
+This file combines two complementary testing practices into a single suite: **visual regression** (pixel-level screenshot comparison) and **responsive design** (mobile viewport verification).
+
+#### 4a. Visual Regression
+
+##### What is it?
+
+Visual regression testing captures a full-page screenshot and compares it pixel-by-pixel against a previously approved baseline image. If there's a difference, the test fails and generates a visual diff highlighting exactly what changed.
+
+##### Why it matters
+
+- **Catches what functional tests miss** — A CSS change that shifts a button 5 pixels to the left won't break any functional assertion, but it will break a visual snapshot.
+- **Ideal for static content** — Pages like FAQs, landing pages, or dashboards benefit enormously from visual testing because their layout is their primary "feature."
+- **Confidence in refactors** — When refactoring CSS or updating components, visual tests confirm nothing changed unexpectedly.
+
+##### How to implement
+
+```typescript
+test.describe("Visual Regression", () => {
+  test("homepage should match snapshot", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector("header");
+
+    const screenshot = await page.screenshot({ fullPage: true });
+    expect(screenshot).toMatchSnapshot("home.png");
+  });
+});
+```
+
+> **Important:** Visual regression baselines should be generated inside Docker to avoid OS-specific rendering differences. See [Section 7: Consistent Cross-Platform Testing with Docker](#7-consistent-cross-platform-testing-with-docker).
+
+#### 4b. Responsive / Viewport Testing
+
+##### What is it?
+
+Testing your application under specific viewport dimensions to simulate how it renders on mobile phones, tablets, or other non-desktop devices.
+
+##### Why it matters
+
+- **Mobile-first reality** — Over 50% of global web traffic comes from mobile devices. Buttons that overlap or text that overflows can make an app unusable on a phone.
+- **Layout regression prevention** — A CSS change on desktop can inadvertently break the mobile layout. Viewport tests catch these regressions automatically.
+- **Cross-device confidence** — You verify functional correctness (not just appearance) at constrained dimensions — buttons can still be clicked, text is still readable.
+
+##### How to implement
+
+```typescript
+test.describe("Responsive Design Testing", () => {
+  // Simulate an iPhone SE viewport
+  test.use({ viewport: { width: 375, height: 667 } });
+
+  test("should render correctly on mobile viewport", async ({ page }) => {
+    await page.goto("/");
+
+    // Verify all critical elements are visible
+    await expect(page.locator("header")).toBeVisible();
+    await expect(page.locator("text=Turquoise")).toBeVisible();
+    await expect(page.locator("text=Red")).toBeVisible();
+    await expect(page.locator("text=Yellow")).toBeVisible();
+
+    // Verify interactions still work at this size
+    await page.click("text=Yellow");
+    const text = await page.locator("text=Current color:").textContent();
+    expect(text).toContain("#f1c40f");
+  });
+});
+```
+
+#### How to verify
+
+```bash
+npx playwright test e2e/tests/visual.spec.ts
+```
+
+Use Playwright's UI mode (`npx playwright test --ui`) to visually inspect how the page renders at the constrained viewport.
+
+---
+
+### 5. Data-Driven Testing
+
+**File:** [`e2e/tests/data-driven.spec.ts`](/e2e/tests/data-driven.spec.ts)
+
+#### What is it?
+
+A pattern where a single test template is executed multiple times with different input data. Instead of writing three nearly identical tests for three colors, you define the data once and generate the tests programmatically.
+
+#### Why it matters
+
+- **DRY (Don't Repeat Yourself)** — The test logic is written once. Adding a new test case means adding one line to the data array, not copying an entire test block.
+- **Scalability** — When your application adds a fourth or fifth color, you add one object to the array and get full test coverage instantly.
+- **Consistency** — Every data point goes through the exact same assertion pipeline, eliminating the risk of copy-paste bugs in duplicated test blocks.
+
+#### How to implement
+
+**Step 1:** Define the test dataset:
+
+```typescript
+const testData = [
+  { name: "Turquoise", expectedHex: "#1abc9c", expectedRgb: "rgb(26, 188, 156)" },
+  { name: "Red",       expectedHex: "#e74c3c", expectedRgb: "rgb(231, 76, 60)"  },
+  { name: "Yellow",    expectedHex: "#f1c40f", expectedRgb: "rgb(241, 196, 15)"  },
+];
+```
+
+**Step 2:** Loop over the data to generate tests:
+
+```typescript
+test.describe("Data-Driven Testing", () => {
+  for (const data of testData) {
+    test(`changing color to ${data.name} should reflect in UI and DOM`, async ({ page }) => {
+      await homePage.clickColorButton(data.name);
+      await expect(homePage.currentColorText).toContainText(data.expectedHex);
+      await expect(homePage.header).toHaveCSS("background-color", data.expectedRgb);
+    });
+  }
+});
+```
+
+#### How to verify
+
+```bash
+npx playwright test e2e/tests/data-driven.spec.ts
+```
+
+The output will list **three distinct test names** — one per dataset entry — confirming that a single test block generated multiple independent executions.
+
+---
+
+### 6. E2E Code Coverage
+
+**Files:** [`e2e/baseFixtures.ts`](/e2e/baseFixtures.ts) · [`e2e/tests/coverage.spec.ts`](/e2e/tests/coverage.spec.ts)
+
+#### What is it?
+
+Code coverage measurement for **end-to-end tests**, not just unit tests. Using [Istanbul/nyc](https://github.com/istanbuljs/nyc), we instrument the application at build time and collect coverage data from the browser during Playwright test execution. This tells you exactly which lines, branches, and functions of your source code are exercised by your E2E suite.
+
+#### Why it matters
+
+- **Identifies blind spots** — Shows which parts of your codebase have no E2E test coverage, guiding you on where to write the next test.
+- **Measures test effectiveness** — A test suite with 200 tests but 30% coverage has fundamental gaps. Coverage metrics make this visible.
+- **CI/CD integration** — Coverage data is uploaded to [Coveralls](https://coveralls.io/) on every push, providing historical trends and PR-level deltas.
+- **Stakeholder communication** — Coverage percentages are easy to understand and share with product managers and engineering leads.
+
+#### How it works
+
+The custom `baseFixtures.ts` extends Playwright's test runner to:
+
+1. **Inject** a `beforeunload` listener that serializes Istanbul's `__coverage__` object
+2. **Expose** a `collectIstanbulCoverage` function to the browser context
+3. **Collect** coverage data from every open page after each test completes
+4. **Write** coverage JSON files to `.nyc_output/` with unique UUIDs
+
+#### How to implement
+
+**Step 1:** Ensure your build pipeline includes `babel-plugin-istanbul` (controlled via the `USE_BABEL_PLUGIN_ISTANBUL` env var).
+
+**Step 2:** Import from `baseFixtures` instead of `@playwright/test`:
+
+```typescript
+// e2e/tests/coverage.spec.ts
+import { test, expect } from "../baseFixtures"; // ← NOT from @playwright/test
+```
+
+**Step 3:** Write your tests as usual — coverage collection is automatic.
+
+#### Generating reports
+
+```bash
+# Run tests with coverage collection
+npm run coverage
+
+# Or generate reports manually:
+npx nyc report --reporter=html    # HTML report → coverage/index.html
+npx nyc report --reporter=lcov    # For Coveralls / Codecov upload
+npx nyc report --reporter=text    # CLI summary table
+```
+
+#### How to verify
+
+```bash
+npm run coverage
+```
+
+The CLI will output a table showing per-file statement, branch, function, and line coverage percentages.
+
+---
+
+### 7. Consistent Cross-Platform Testing with Docker
+
+#### What is it?
+
+A Docker-based testing environment that guarantees identical rendering and test behavior across all machines — developer laptops, CI servers, and staging environments.
+
+#### Why it matters
+
+Visual regression tests are particularly sensitive to cross-platform differences. A screenshot taken on **macOS** will differ from one taken on **Linux** due to subtle variations in:
+
+- **Font rendering** — macOS uses Core Text, Linux uses FreeType — same font, different pixels
+- **Anti-aliasing** — Sub-pixel smoothing algorithms differ between OSes
+- **System fonts** — Default fallback fonts vary across platforms
+
+These differences cause **false positives**: tests pass locally on macOS but fail in Linux-based CI, or vice versa. This erodes trust in the test suite and wastes debugging time.
+
+#### The solution
+
+We use Docker with the official [Playwright Docker image](https://hub.docker.com/_/microsoft-playwright) (`mcr.microsoft.com/playwright`) to lock the rendering environment. Our `docker-compose.yml` defines two services:
+
+```
+docker-compose.yml
+├── app service         → Runs the React dev server on port 3000
+└── playwright service  → Runs Playwright tests against the app
+```
+
+**Dockerfile** (simplified):
 
 ```dockerfile
-# Use the official Playwright image which includes browsers and deps
 FROM mcr.microsoft.com/playwright:v1
 
 WORKDIR /app
@@ -89,85 +434,77 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 
-# Default command can run the Playwright test runner
 CMD ["npm", "test"]
 ```
 
-### Docker Compose
+**Key Docker Compose features:**
 
-We use Docker Compose to make running visual tests easy and consistent. The Compose setup lets developers start everything with a single command and use the exact same setup in CI. Key points:
+- **Consistent rendering** — The official Playwright image pins browser versions and system libraries
+- **Volume mounts** — Snapshots (`e2e/snapshots/`) and test results (`test-results/`) persist between container runs, so updated baselines are always available on the host
+- **CI-ready** — The same Docker configuration runs locally and in GitHub Actions
 
-- Defines a `playwright` service responsible for running tests.
-- Builds the Docker image using our `Dockerfile`.
-- Sets `/app` as the default working directory.
-- Mounts volumes for:
-  - Project directory — so the container can access source code without copying it every time.
-  - Screenshots — so new screenshots persist and visual diffs remain across container runs.
-  - Playwright reports — so test reports are available locally and as CI artifacts.
+#### How to use
 
-This eliminates layout differences caused by varying screen sizes and makes visual diffs easy to review. After test execution, screenshots are saved in the `screenshots/` folder at the repository root (and snapshots/baselines are stored in `e2e/snapshots` where applicable).
+```bash
+# Run the full test suite in Docker
+npm run test:e2e:docker
 
-### Why it matters
+# Update visual regression baselines (after intentional UI changes)
+npm run test:e2e:docker:update
+```
 
-With this setup we catch real visual regressions while ignoring harmless OS-level differences. Docker guarantees a consistent testing environment and Playwright makes capturing and comparing screenshots straightforward. Our tests are therefore reliable, reproducible, and actionable—keeping the UI looking great everywhere.
+> **Tip:** Always review visual diffs before accepting updated baselines. Never blindly run `--update-snapshots`.
 
-### Running visual tests locally
+---
 
-You can run visual tests either directly on your machine (with Node and Playwright installed) or inside Docker for a consistent environment. The instructions below are OS-agnostic.
+## Getting Started
 
-Run using Docker (recommended for consistent CI results):
+### Prerequisites
 
-- Ensure a Docker daemon is running (Docker Desktop, Colima, or another provider).
+- Node.js 16+
+- Docker (for visual regression and consistent cross-platform tests)
 
-- Build and run tests with Docker Compose:
-- Run the test suite: `npm run test:e2e:docker`
-- Update snapshot baselines: `npm run test:e2e:docker:update`
+### Installation
 
-Screenshots and snapshots
+```bash
+npm install
+npx playwright install
+```
 
-- Visual diffs and screenshots are saved to the `screenshots/` folder at the repository root.
-- Baseline snapshots are stored in `e2e/snapshots` and are mounted by the Compose service so updates persist between runs.
+### Running tests locally
 
-Tips
+```bash
+# Run all e2e tests (starts dev server automatically)
+npx playwright test
 
-- Use Docker for CI to avoid OS-specific font and rendering differences that cause false positives.
-- Only update snapshot baselines after reviewing diffs to avoid accepting unintended visual changes.
+# Run a specific test suite
+npx playwright test e2e/tests/a11y.spec.ts
 
-## QA Best Practices & Test Patterns
+# Run in headed mode (see the browser)
+npx playwright test --headed
 
-To demonstrate robust testing methodologies, we have added several test suites in the `e2e/tests/` directory showcasing advanced Playwright patterns often utilized by Senior QA Engineers.
+# Run in UI mode (interactive debugging)
+npx playwright test --ui
 
-### 1. Page Object Model (POM)
-**File:** `e2e/tests/pom-refactored.spec.ts` & `e2e/pages/HomePage.ts`
-- **Concept:** The Page Object Model abstracts page interactions and locators into a separate class (`HomePage.ts`). 
-- **Why it is important:** Tests become highly readable and declarative. If an element's selector changes (e.g., a button ID is updated), you only need to update the `HomePage.ts` class, not the fifty test files that click that button. It reduces code duplication and significantly improves test maintenance.
-- **How to write:** Create a class for a specific page or component. Define elements using `page.locator()` in the constructor. Create async methods for user actions (e.g., `clickSubmit()`, `enterEmail()`). Import this class into your test file, instantiate it in a `beforeEach` hook, and call its methods.
-- **How to verify:** Run the test using `npx playwright test e2e/tests/pom-refactored.spec.ts`. The test execution output should show the steps passing. You can also review the trace viewer (`npx playwright show-trace`) to see that the locators are resolving correctly via the POM methods.
+# Run with coverage
+npm run coverage
+```
 
-### 2. Accessibility (a11y) Testing
-**File:** `e2e/tests/a11y.spec.ts`
-- **Concept:** Automated accessibility auditing using `@axe-core/playwright`.
-- **Why it is important:** Ensures our application is usable by individuals with disabilities. This test scans the DOM for violations against Web Content Accessibility Guidelines (WCAG), such as insufficient color contrast, missing ARIA attributes, or incorrect heading hierarchies. Integrating this into CI prevents regressions that make the app exclusionary.
-- **How to write:** Install `@axe-core/playwright`. In your test, navigate to the desired state, wait for elements to render, and instantiate `AxeBuilder` passing the `page` object. Call `.analyze()` and assert that the `violations` array is empty (`expect(results.violations).toEqual([])`).
-- **How to verify:** Run the test using `npx playwright test e2e/tests/a11y.spec.ts`. If it fails, the CLI output will clearly list the WCAG violation (e.g., color contrast ratio of 2.5 instead of 3.0) and the specific HTML node that caused it. 
+### Project structure
 
-### 3. Network Mocking & Interception
-**File:** `e2e/tests/network-mocking.spec.ts`
-- **Concept:** Intercepting HTTP requests to modify traffic before it reaches the browser or backend.
-- **Why it is important:** Allows us to test behaviors that are hard to replicate consistently in a live environment. We can abort requests to verify fallback mechanisms or mock API responses to test UI states (errors, empty responses) flawlessly without touching a database.
-- **How to write:** Use `page.route('**/pattern', handler)`. To block an asset, use `route.abort()`. To mock an API, use `route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({...}) })`. Make sure to call `page.route` *before* the action that triggers the network request (like `page.goto`).
-- **How to verify:** Run the test using `npx playwright test e2e/tests/network-mocking.spec.ts`. You can verify by asserting the UI reflects the mocked state (e.g., checking that alternate text is displayed for a blocked image, or a specific mocked title appears on the screen).
-
-### 4. Responsive / Viewport Testing
-**File:** `e2e/tests/responsive.spec.ts`
-- **Concept:** Setting specific viewports (e.g., simulating a mobile device width/height) to verify layout and functionality on smaller screens.
-- **Why it is important:** Mobile users make up a significant portion of web traffic. By explicitly defining viewports, we ensure core visual elements don't overlap, disappear, or break functionally when constrained to narrow screen real estate.
-- **How to write:** Within your test suite (`test.describe`), configure the viewport size using `test.use({ viewport: { width: 375, height: 667 } })`. Then write assertions as usual, verifying that elements are visible or functional constrained layouts.
-- **How to verify:** Run the test using `npx playwright test e2e/tests/responsive.spec.ts`. To truly verify the visual aspect, Playwright's UI mode (`npx playwright test --ui`) or HTML report will show screenshots or traces taken at the specified constrained viewport dimensions.
-
-### 5. Data-Driven Testing
-**File:** `e2e/tests/data-driven.spec.ts`
-- **Concept:** Generating multiple tests programmatically from an array of data objects.
-- **Why it is important:** Rather than copying and pasting the same test structure four times for four different colors, we define the logic once and iterate over a dataset (`testData`). This makes expanding test coverage trivial (just add a new object to the array) and keeps the test suite concise and DRY (Don't Repeat Yourself).
-- **How to write:** Define a JavaScript/TypeScript array containing objects with your test inputs and expected outputs. Create a `for...of` loop over this array. Inside the loop, call `test(...)` to dynamically generate a test case for each dataset, using string interpolation for the test name.
-- **How to verify:** Run the test using `npx playwright test e2e/tests/data-driven.spec.ts`. The output will list multiple distinct test names (one for each item in the data array), confirming that the single test block generated multiple independent test executions.
+```
+e2e/
+├── pages/
+│   └── HomePage.ts              # Page Object Model
+├── tests/
+│   ├── a11y.spec.ts             # Accessibility testing
+│   ├── coverage.spec.ts         # E2E tests with code coverage
+│   ├── data-driven.spec.ts      # Data-driven testing
+│   ├── network-mocking.spec.ts  # Network mocking & interception
+│   ├── pom-refactored.spec.ts   # POM demonstration
+│   └── visual.spec.ts           # Visual regression & responsive testing
+├── snapshots/
+│   └── home.png                 # Visual regression baseline
+├── baseFixtures.ts              # Istanbul coverage fixture
+└── helper.ts                    # Utility functions
+```
