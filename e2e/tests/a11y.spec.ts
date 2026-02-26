@@ -2,6 +2,13 @@ import { test, expect } from "../baseFixtures";
 import { HomePage } from "../pages/HomePage";
 import AxeBuilder from "@axe-core/playwright";
 
+/**
+ * Test Suite: Accessibility Tests
+ * 
+ * This suite demonstrates how to use @axe-core/playwright to run accessibility 
+ * audits against the DOM. It ensures that the application complies with 
+ * accessibility WCAG guidelines.
+ */
 test.describe("Accessibility Tests", () => {
   let homePage: HomePage;
 
@@ -10,6 +17,12 @@ test.describe("Accessibility Tests", () => {
     await homePage.goto();
   });
 
+  /**
+   * Test: Automatically detectable accessibility issues
+   * 
+   * Scans the initial page state for any accessibility violations, ensuring
+   * that elements like headings, ARIA tags, and contrast are compliant.
+   */
   test("should not have any automatically detectable accessibility issues", async ({
     page,
   }) => {
@@ -23,6 +36,13 @@ test.describe("Accessibility Tests", () => {
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
+  /**
+   * Test: Accessibility after state change
+   * 
+   * Verifies that the application remains accessible after user interactions,
+   * specifically ensuring that color contrast ratios remain valid when the 
+   * background color changes dynamically.
+   */
   test("should maintain accessibility after state change (color update)", async ({
     page,
   }) => {

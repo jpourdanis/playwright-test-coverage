@@ -8,6 +8,12 @@ const testData = [
   { name: "Yellow", expectedHex: "#f1c40f", expectedRgb: "rgb(241, 196, 15)" },
 ];
 
+/**
+ * Test Suite: Data-Driven Testing
+ * 
+ * This suite demonstrates how to use a dataset (array of objects) to dynamically 
+ * generate identical test cases for different inputs, keeping the code DRY.
+ */
 test.describe("Data-Driven Testing", () => {
   let homePage: HomePage;
 
@@ -18,6 +24,13 @@ test.describe("Data-Driven Testing", () => {
 
   // Loop over the dataset to dynamically generate tests
   for (const data of testData) {
+    /**
+     * Test: Verify background color reflects dataset value
+     * 
+     * Iterates through the predefined dataset of colors, clicks the corresponding 
+     * color button, and validates that both the DOM text and CSS background 
+     * colors match the expected outputs from the dataset.
+     */
     test(`changing color to ${data.name} should reflect in UI and DOM`, async ({
       page,
     }) => {
