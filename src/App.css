@@ -21,11 +21,11 @@
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: white;
+  color: #111; /* Darker text for better contrast against light backgrounds */
 }
 
 .App-link {
-  color: #61dafb;
+  color: #003366; /* Even darker blue to pass contrast ratio 3:1 on turquoise */
 }
 
 @keyframes App-logo-spin {

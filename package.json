@@ -40,6 +40,7 @@
     ]
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@types/node": "^22.13.10"
   }
 }

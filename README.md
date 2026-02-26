@@ -1,4 +1,4 @@
-# Test Coverage on E2E tests and Visual Regression testing
+# Test Automation Best Practices in Action
 
 [![Coverage Status](https://coveralls.io/repos/github/jpourdanis/playwright-test-coverage/badge.svg?branch=main)](https://coveralls.io/github/jpourdanis/playwright-test-coverage?branch=main)
 [![CI](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/nodejs.yml/badge.svg)](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/nodejs.yml)
@@ -130,3 +130,42 @@ Tips
 
 - Use Docker for CI to avoid OS-specific font and rendering differences that cause false positives.
 - Only update snapshot baselines after reviewing diffs to avoid accepting unintended visual changes.
+
+## QA Best Practices & Test Patterns
+
+To demonstrate robust testing methodologies, we have added several test suites in the `e2e/tests/` directory showcasing advanced Playwright patterns often utilized by Senior QA Engineers.
+
+### 1. Page Object Model (POM)
+**File:** `e2e/tests/pom-refactored.spec.ts` & `e2e/pages/HomePage.ts`
+- **Concept:** The Page Object Model abstracts page interactions and locators into a separate class (`HomePage.ts`). 
+- **Why it is important:** Tests become highly readable and declarative. If an element's selector changes (e.g., a button ID is updated), you only need to update the `HomePage.ts` class, not the fifty test files that click that button. It reduces code duplication and significantly improves test maintenance.
+- **How to write:** Create a class for a specific page or component. Define elements using `page.locator()` in the constructor. Create async methods for user actions (e.g., `clickSubmit()`, `enterEmail()`). Import this class into your test file, instantiate it in a `beforeEach` hook, and call its methods.
+- **How to verify:** Run the test using `npx playwright test e2e/tests/pom-refactored.spec.ts`. The test execution output should show the steps passing. You can also review the trace viewer (`npx playwright show-trace`) to see that the locators are resolving correctly via the POM methods.
+
+### 2. Accessibility (a11y) Testing
+**File:** `e2e/tests/a11y.spec.ts`
+- **Concept:** Automated accessibility auditing using `@axe-core/playwright`.
+- **Why it is important:** Ensures our application is usable by individuals with disabilities. This test scans the DOM for violations against Web Content Accessibility Guidelines (WCAG), such as insufficient color contrast, missing ARIA attributes, or incorrect heading hierarchies. Integrating this into CI prevents regressions that make the app exclusionary.
+- **How to write:** Install `@axe-core/playwright`. In your test, navigate to the desired state, wait for elements to render, and instantiate `AxeBuilder` passing the `page` object. Call `.analyze()` and assert that the `violations` array is empty (`expect(results.violations).toEqual([])`).
+- **How to verify:** Run the test using `npx playwright test e2e/tests/a11y.spec.ts`. If it fails, the CLI output will clearly list the WCAG violation (e.g., color contrast ratio of 2.5 instead of 3.0) and the specific HTML node that caused it. 
+
+### 3. Network Mocking & Interception
+**File:** `e2e/tests/network-mocking.spec.ts`
+- **Concept:** Intercepting HTTP requests to modify traffic before it reaches the browser or backend.
+- **Why it is important:** Allows us to test behaviors that are hard to replicate consistently in a live environment. We can abort requests to verify fallback mechanisms or mock API responses to test UI states (errors, empty responses) flawlessly without touching a database.
+- **How to write:** Use `page.route('**/pattern', handler)`. To block an asset, use `route.abort()`. To mock an API, use `route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({...}) })`. Make sure to call `page.route` *before* the action that triggers the network request (like `page.goto`).
+- **How to verify:** Run the test using `npx playwright test e2e/tests/network-mocking.spec.ts`. You can verify by asserting the UI reflects the mocked state (e.g., checking that alternate text is displayed for a blocked image, or a specific mocked title appears on the screen).
+
+### 4. Responsive / Viewport Testing
+**File:** `e2e/tests/responsive.spec.ts`
+- **Concept:** Setting specific viewports (e.g., simulating a mobile device width/height) to verify layout and functionality on smaller screens.
+- **Why it is important:** Mobile users make up a significant portion of web traffic. By explicitly defining viewports, we ensure core visual elements don't overlap, disappear, or break functionally when constrained to narrow screen real estate.
+- **How to write:** Within your test suite (`test.describe`), configure the viewport size using `test.use({ viewport: { width: 375, height: 667 } })`. Then write assertions as usual, verifying that elements are visible or functional constrained layouts.
+- **How to verify:** Run the test using `npx playwright test e2e/tests/responsive.spec.ts`. To truly verify the visual aspect, Playwright's UI mode (`npx playwright test --ui`) or HTML report will show screenshots or traces taken at the specified constrained viewport dimensions.
+
+### 5. Data-Driven Testing
+**File:** `e2e/tests/data-driven.spec.ts`
+- **Concept:** Generating multiple tests programmatically from an array of data objects.
+- **Why it is important:** Rather than copying and pasting the same test structure four times for four different colors, we define the logic once and iterate over a dataset (`testData`). This makes expanding test coverage trivial (just add a new object to the array) and keeps the test suite concise and DRY (Don't Repeat Yourself).
+- **How to write:** Define a JavaScript/TypeScript array containing objects with your test inputs and expected outputs. Create a `for...of` loop over this array. Inside the loop, call `test(...)` to dynamically generate a test case for each dataset, using string interpolation for the test name.
+- **How to verify:** Run the test using `npx playwright test e2e/tests/data-driven.spec.ts`. The output will list multiple distinct test names (one for each item in the data array), confirming that the single test block generated multiple independent test executions.
