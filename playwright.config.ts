@@ -34,10 +34,17 @@ const config: PlaywrightTestConfig = {
     ignoreHTTPSErrors: true,
     video: "on-first-retry",
     baseURL: process.env.BASE_URL || "http://localhost:3000",
-    // launchOptions: {
-    //   slowMo: 2000, // Slow down by 2 seconds
-    // },
   },
+  reporter: process.env.CI
+    ? [
+        ["allure-playwright"],
+        ["list"],
+      ]
+    : [
+        ["html", { open: "never" }],
+        ["allure-playwright"],
+        ["list"],
+      ],
 };
 
 export default config;

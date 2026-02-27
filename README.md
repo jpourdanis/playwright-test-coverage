@@ -18,6 +18,7 @@ A comprehensive reference project demonstrating **senior-level QA engineering be
   - [5. Data-Driven Testing](#5-data-driven-testing)
   - [6. E2E Code Coverage](#6-e2e-code-coverage)
   - [7. Consistent Cross-Platform Testing with Docker](#7-consistent-cross-platform-testing-with-docker)
+  - [8. Allure Reports with Historical Data & Flaky Test Detection](#8-allure-reports-with-historical-data--flaky-test-detection)
 - [Getting Started](#getting-started)
 
 ---
@@ -479,6 +480,59 @@ npm run test:e2e:docker:update
 ```
 
 > **Tip:** Always review visual diffs before accepting updated baselines. Never blindly run `--update-snapshots`.
+
+---
+
+### 8. Allure Reports with Historical Data & Flaky Test Detection
+
+#### What is it?
+
+[Allure Framework](https://allurereport.org/) is a flexible lightweight multi-language test report tool that not only shows a very concise representation of what has been tested in a neat web report form, but allows everyone participating in the development process to extract maximum useful information from everyday execution of tests. We've integrated `allure-playwright` to automatically generate these reports.
+
+#### Why it matters
+
+- **Historical Data** — Standard Playwright HTML reports are ephemeral; they overwrite on the next run. Allure maintains a history of test executions, allowing you to see trends over time (e.g., "this test has been failing for the last 5 builds").
+- **Flaky Test Detection** — Because Allure tracks history, it can easily identify "flaky" tests—tests that pass and fail intermittently without code changes. This is crucial for maintaining a trustworthy test suite.
+- **Rich Visualizations** — Allure categorizes failures into Product Defects (bugs) and Test Defects (broken tests), providing a clear dashboard for stakeholders to understand the health of the application.
+- **Attachments** — Screenshots (like visual regression diffs), videos, and traces collected by Playwright are natively embedded into the Allure report for easy debugging.
+
+#### How to implement
+
+**Step 1:** Install the necessary packages.
+
+```bash
+npm install -D allure-playwright
+npm install -g allure-commandline # For viewing reports locally
+```
+
+**Step 2:** Configure Playwright to use the Allure reporter in `playwright.config.ts`.
+
+```typescript
+  reporter: process.env.CI
+    ? [
+        ["allure-playwright"],
+        ["list"],
+      ]
+    : [
+        ["html", { open: "never" }],
+        ["allure-playwright"],
+        ["list"],
+      ],
+```
+
+**Step 3:** Use GitHub Actions to build and publish the report with historical data.
+
+Our CI workflow uses `simple-elf/allure-report-action` to build the report. Crucially, it fetches the previous `allure-history` from the `gh-pages` branch, allowing Allure to compute trends. It then publishes the updated report back to GitHub Pages.
+
+#### How to verify
+
+To view the report locally after running tests:
+
+```bash
+npx allure serve allure-results
+```
+
+In CI, navigate to the repository's GitHub Pages URL after a build finishes to view the continually updated historical report.
 
 ---
 
