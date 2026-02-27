@@ -1,0 +1,12 @@
+{
+  "title": "Εφαρμογή επιλογής χρώματος",
+  "instructions": "Επεξεργαστείτε το <1>src/App.js</1> και αποθηκεύστε για επαναφόρτωση.",
+  "learnReact": "Μάθετε React",
+  "currentColor": "Τρέχον χρώμα:",
+  "colors": {
+    "turquoise": "Τιρκουάζ",
+    "red": "Κόκκινο",
+    "yellow": "Κίτρινο"
+  },
+  "languageSelector": "Επιλογή Γλώσσας"
+}

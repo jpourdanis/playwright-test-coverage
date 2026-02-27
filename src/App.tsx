@@ -1,9 +1,12 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { useTranslation, Trans } from 'react-i18next';
 
 const App = () => {
   const [backgroundColor, setBackgroundColor] = React.useState("#1abc9c")
+  const { t, i18n } = useTranslation();
+
   const handleMakeTurquoise = () => {
     setBackgroundColor("#1abc9c")
   }
@@ -13,14 +16,28 @@ const App = () => {
   const handleMakeYellow = () => {
     setBackgroundColor("#f1c40f")
   }
+
+  const changeLanguage = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    i18n.changeLanguage(e.target.value);
+  }
+
   return (
     <div className="App">
       <main>
         <header className="App-header" style={{ backgroundColor }}>
+          <div className="language-selector">
+            <select aria-label={t('languageSelector')} value={i18n.resolvedLanguage} onChange={changeLanguage}>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="el">Ελληνικά</option>
+            </select>
+          </div>
           <img src={logo} className="App-logo" alt="logo" />
-          <h1>Color Chooser App</h1>
+          <h1>{t('title')}</h1>
           <p>
-            Edit <code>src/App.js</code> and save to reload.
+            <Trans i18nKey="instructions">
+              Edit <code>src/App.js</code> and save to reload.
+            </Trans>
           </p>
           <a
             className="App-link"
@@ -28,13 +45,13 @@ const App = () => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Learn React
+            {t('learnReact')}
           </a>
-          <span>Current color: {backgroundColor}</span>
+          <span>{t('currentColor')} {backgroundColor}</span>
           <div className="btn-group-colors">
-            <button onClick={handleMakeTurquoise}>Turquoise</button>
-            <button onClick={handleMakeRed}>Red</button>
-            <button onClick={handleMakeYellow}>Yellow</button>
+            <button onClick={handleMakeTurquoise}>{t('colors.turquoise')}</button>
+            <button onClick={handleMakeRed}>{t('colors.red')}</button>
+            <button onClick={handleMakeYellow}>{t('colors.yellow')}</button>
           </div>
         </header>
       </main>

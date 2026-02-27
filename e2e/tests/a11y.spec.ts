@@ -61,3 +61,44 @@ test.describe("Accessibility Tests", () => {
     expect(contrastViolations).toEqual([]);
   });
 });
+
+import enTranslations from "../../src/locales/en.json";
+import esTranslations from "../../src/locales/es.json";
+import elTranslations from "../../src/locales/el.json";
+
+/**
+ * Test Suite: i18n Accessibility Tests
+ * 
+ * Demonstrates best practices for handling multiple languages without 
+ * relying on brittle DOM manipulation locators. By importing the language 
+ * JSON directly, we can use resilient user-centric locators.
+ */
+test.describe("i18n Accessibility Tests", () => {
+  const languages = [
+    { code: "en", i18n: enTranslations },
+    { code: "es", i18n: esTranslations },
+    { code: "el", i18n: elTranslations },
+  ];
+
+  for (const lang of languages) {
+    test(`should maintain accessibility in ${lang.code} language and verify resilient locators`, async ({ page }) => {
+      const homePage = new HomePage(page);
+      await homePage.goto();
+
+      // Change the language. Default is English, so the label starts as English.
+      const languageDropdown = page.getByRole("combobox", { name: enTranslations.languageSelector });
+      await languageDropdown.selectOption(lang.code);
+
+      // Verify page layout using dynamic, translation-aware accessibility locators!
+      // This is the clean, resilient way over falling back to CSS selectors.
+      await expect(page.getByRole("heading", { name: lang.i18n.title })).toBeVisible();
+      await expect(page.getByRole("button", { name: lang.i18n.colors.turquoise })).toBeVisible();
+      await expect(page.getByRole("button", { name: lang.i18n.colors.red })).toBeVisible();
+      await expect(page.getByRole("button", { name: lang.i18n.colors.yellow })).toBeVisible();
+
+      // Run Axe to check for accessibility violations in the translated state
+      const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+      expect(accessibilityScanResults.violations).toEqual([]);
+    });
+  }
+});

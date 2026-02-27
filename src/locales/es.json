@@ -1,0 +1,12 @@
+{
+  "title": "Aplicación de elección de color",
+  "instructions": "Edita <1>src/App.js</1> y guarda para recargar.",
+  "learnReact": "Aprender React",
+  "currentColor": "Color actual:",
+  "colors": {
+    "turquoise": "Turquesa",
+    "red": "Rojo",
+    "yellow": "Amarillo"
+  },
+  "languageSelector": "Seleccionar Idioma"
+}

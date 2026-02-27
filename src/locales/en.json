@@ -1,0 +1,12 @@
+{
+  "title": "Color Chooser App",
+  "instructions": "Edit <1>src/App.js</1> and save to reload.",
+  "learnReact": "Learn React",
+  "currentColor": "Current color:",
+  "colors": {
+    "turquoise": "Turquoise",
+    "red": "Red",
+    "yellow": "Yellow"
+  },
+  "languageSelector": "Select Language"
+}

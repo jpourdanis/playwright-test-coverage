@@ -12,6 +12,7 @@ A comprehensive reference project demonstrating **senior-level QA engineering be
 - [Best Practices Implemented](#best-practices-implemented)
   - [1. Page Object Model (POM)](#1-page-object-model-pom)
   - [2. Accessibility (a11y) Testing](#2-accessibility-a11y-testing)
+    - [Handling i18n with Accessibility Locators](#handling-i18n-with-accessibility-locators)
   - [3. Network Mocking & Interception](#3-network-mocking--interception)
   - [4. Visual Regression & Responsive Testing](#4-visual-regression--responsive-testing)
   - [5. Data-Driven Testing](#5-data-driven-testing)
@@ -150,6 +151,30 @@ npx playwright test e2e/tests/a11y.spec.ts
 ```
 
 If a violation is found, the output will include the exact rule ID (e.g., `color-contrast`), the failing HTML element, and the specific contrast ratio that failed.
+
+#### Handling i18n with Accessibility Locators
+
+**File:** [`e2e/tests/a11y.spec.ts`](/e2e/tests/a11y.spec.ts)
+
+When an application has different languages, most engineers panic because their trusted English text locators would break once they change the testing language. 
+
+So they abandon accessibility locators and fallback to the dark ages of DOM manipulation. They start writing locators like this:
+
+🚩 `page.locator('.form-group .btn.btn-primary .submit-btn')`  
+🚩 `page.locator('//div[@class="login-container"]/div[2]/form/button')`
+
+This is how flaky pipelines are born, and the confidence in the testing is ruined. A developer adds one extra wrapper `div` for a layout tweak, and your entire test suite breaks.
+
+There is a much cleaner way to handle this in Playwright. Your testing framework just needs a single source of truth. Keep it simple: load the correct language JSON file at runtime (e.g., using an environment variable, test parameters, or straight imports). Then you just pass that dynamic dictionary right back into your resilient Playwright locators:
+
+```typescript
+// Example: locating a button dynamically based on the current testing language
+await page.getByRole('button', { name: i18nConfig.colors.red }).click();
+```
+
+Playwright inserts the correct string automatically. English, French, Spanish, or whatsoever — it does not matter. You keep the user-centric accessibility locators and ditch the brittle DOM paths. 
+
+Do not compromise your architecture just because the text changes. Smart systems adapt to the context. Adding an additional language to the framework is done under a minute.
 
 ---
 
