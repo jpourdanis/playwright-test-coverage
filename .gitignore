@@ -6,3 +6,5 @@
 .DS_Store
 /.docker-local/
 .vscode/
+/playwright-report/
+/allure-results/
