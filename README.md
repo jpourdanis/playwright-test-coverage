@@ -485,6 +485,8 @@ npm run test:e2e:docker:update
 
 ### 8. Allure Reports with Historical Data & Flaky Test Detection
 
+👉 **[View the Live Allure Report for this Repository](https://jpourdanis.github.io/test-automation-best-practices/)**
+
 #### What is it?
 
 [Allure Framework](https://allurereport.org/) is a flexible lightweight multi-language test report tool that not only shows a very concise representation of what has been tested in a neat web report form, but allows everyone participating in the development process to extract maximum useful information from everyday execution of tests. We've integrated `allure-playwright` to automatically generate these reports.
@@ -533,6 +535,56 @@ npx allure serve allure-results
 ```
 
 In CI, navigate to the repository's GitHub Pages URL after a build finishes to view the continually updated historical report.
+
+---
+
+### 9. Cross-Browser Testing Strategy
+
+**File:** [`playwright.config.ts`](/playwright.config.ts) · [`e2e/tests/cross-browser.spec.ts`](/e2e/tests/cross-browser.spec.ts)
+
+#### What is it?
+
+A conditional strategy for running tests across multiple browser engines (Chromium, Firefox, and WebKit) without permanently inflating the CI execution time for every single commit.
+
+#### Why it matters
+
+Many teams configure Playwright to run every test on all three browsers. While this provides great coverage, it multiplies your test execution time by 3. If a PR takes 15 minutes to run UI tests on Chrome, it will take 45 minutes to run all three browsers. This destroys the developer feedback loop.
+
+The senior QA best practice is **Conditional Execution**:
+1. **Pull Requests / Local Dev:** Run tests fast on one primary engine (e.g., Chromium).
+2. **Nightly / Release Branches:** Run full regression across all browsers using an environment variable flag.
+
+#### How to implement
+
+We configure our `playwright.config.ts` to dynamically inject browser projects based on an environment variable (`CROSS_BROWSER`):
+
+```typescript
+  projects: [
+    {
+      name: "Chrome",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Conditionally load other browsers only when requested
+    ...(process.env.CROSS_BROWSER === "true"
+      ? [
+          { name: "Firefox", use: { ...devices["Desktop Firefox"] } },
+          { name: "WebKit",  use: { ...devices["Desktop Safari"] } },
+        ]
+      : []),
+  ],
+```
+
+#### How to verify
+
+**Run fast on default browser (Chromium only):**
+```bash
+npm run test
+```
+
+**Run deep coverage across all engines (Chromium, Firefox, WebKit):**
+```bash
+npm run test:cross-browser
+```
 
 ---
 

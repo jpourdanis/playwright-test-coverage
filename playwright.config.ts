@@ -1,4 +1,4 @@
-import { PlaywrightTestConfig } from "@playwright/test";
+import { PlaywrightTestConfig, devices } from "@playwright/test";
 
 const config: PlaywrightTestConfig = {
   // Directory containing Playwright tests
@@ -24,9 +24,27 @@ const config: PlaywrightTestConfig = {
     {
       name: "Chrome",
       use: {
-        browserName: "chromium",
+        ...devices["Desktop Chrome"],
       },
     },
+    ...(process.env.CROSS_BROWSER === "true"
+      ? [
+          {
+            name: "Firefox",
+            use: {
+              ...devices["Desktop Firefox"],
+            },
+            testMatch: /.*cross-browser\.spec\.ts/,
+          },
+          {
+            name: "WebKit",
+            use: {
+              ...devices["Desktop Safari"],
+            },
+            testMatch: /.*cross-browser\.spec\.ts/,
+          },
+        ]
+      : []),
   ],
   use: {
     headless: true,

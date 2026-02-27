@@ -33,7 +33,11 @@ function cleanupCoverageDir() {
 }
 
 // Initialize by cleaning up any previous coverage data
-cleanupCoverageDir();
+// Only clean up once per process to avoid workers deleting each other's data
+if (!process.env.COVERAGE_CLEANED) {
+  cleanupCoverageDir();
+  process.env.COVERAGE_CLEANED = "true";
+}
 
 /**
  * Extended Playwright test fixture that adds code coverage collection
@@ -50,8 +54,10 @@ export const test = baseTest.extend({
       ),
     );
 
-    // Create directory for coverage data
-    await fs.promises.mkdir(istanbulCLIOutput, { recursive: true });
+    // Create directory for coverage data if it doesn't exist
+    if (!fs.existsSync(istanbulCLIOutput)) {
+      await fs.promises.mkdir(istanbulCLIOutput, { recursive: true });
+    }
 
     // Expose function to browser context for collecting coverage data
     await context.exposeFunction(

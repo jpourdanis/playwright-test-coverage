@@ -9,6 +9,10 @@ services:
     environment:
       - USE_BABEL_PLUGIN_ISTANBUL=1
       - NODE_OPTIONS=--openssl-legacy-provider
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
 
   playwright:
     build:
@@ -26,6 +30,11 @@ services:
     # `docker-compose run --rm playwright` to execute tests, and pass extra
     # arguments to change behavior (e.g. `--update-snapshots`).
     volumes:
+      - ./e2e:/app/e2e
+      - ./playwright.config.ts:/app/playwright.config.ts
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
       - ./e2e/snapshots:/app/e2e/snapshots
       - ./test-results:/app/test-results
       - ./allure-results:/app/allure-results

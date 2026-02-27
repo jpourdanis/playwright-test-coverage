@@ -45,6 +45,9 @@ jobs:
       - name: Run end-to-end tests (host Playwright)
         run: npm test
 
+      - name: Run cross-browser compatibility tests (host Playwright)
+        run: npm run test:cross-browser
+
       - name: Generate LCOV from host-run coverage
         run: npx nyc report --reporter=lcovonly
 
