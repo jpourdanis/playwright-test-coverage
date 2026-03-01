@@ -31,7 +31,6 @@ test.describe("Cross-Browser Core Functionality", () => {
 
     // Verify interactivity works across different browser engines
     await homePage.clickColorButton("Yellow");
-    const hex = await homePage.getCurrentColorText();
-    expect(hex).toContain("#f1c40f");
+    await expect(homePage.currentColorText).toContainText("#f1c40f");
   });
 });

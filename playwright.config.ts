@@ -17,13 +17,9 @@ const config: PlaywrightTestConfig = {
   webServer: process.env.CI
     ? undefined
     : {
-        command: "npm run start",
+        command: "docker-compose up",
         port: 3000,
         timeout: 120000, // 2 minutes timeout for server to start
-        env: {
-          USE_BABEL_PLUGIN_ISTANBUL: "1",
-          NODE_OPTIONS: "--openssl-legacy-provider", // Add this to fix OpenSSL error
-        },
         reuseExistingServer: true,
       },
   projects: [

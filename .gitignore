@@ -1,4 +1,7 @@
 /node_modules/
+/server/node_modules/
+/.features-gen/
+/build/
 /dist/
 /coverage/
 /.nyc_output/

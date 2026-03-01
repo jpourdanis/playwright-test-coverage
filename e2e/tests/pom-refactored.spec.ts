@@ -32,11 +32,9 @@ test.describe("POM Refactored: Background color tests", () => {
      */
     test(`verify ${color.name} ( #${color.hex} ) is applied as the background color`, async () => {
       await homePage.clickColorButton(color.name);
-      const text = await homePage.getCurrentColorText();
-      const hex = extractHexColor(text);
-      expect(hex).toBe(color.hex);
+      await expect(homePage.currentColorText).toContainText(color.hex);
 
-      const rgb = convertHexToRGB(`#${hex}`);
+      const rgb = convertHexToRGB(`#${color.hex}`);
       await expect(homePage.header).toHaveCSS(
         "background-color",
         `rgb(${rgb.red}, ${rgb.green}, ${rgb.blue})`

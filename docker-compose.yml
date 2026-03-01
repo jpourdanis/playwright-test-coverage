@@ -6,13 +6,36 @@ services:
       target: app
     ports:
       - "3000:3000"
+    depends_on:
+      - api
+      - mongo
     environment:
       - USE_BABEL_PLUGIN_ISTANBUL=1
       - NODE_OPTIONS=--openssl-legacy-provider
+      - PROXY_API_URL=http://api:5001
     volumes:
       - ./src:/app/src
       - ./public:/app/public
       - ./package.json:/app/package.json
+
+  api:
+    build:
+      context: ./server
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/colorsdb
+    volumes:
+      - ./server:/app
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
   playwright:
     build:
@@ -38,3 +61,6 @@ services:
       - ./e2e/snapshots:/app/e2e/snapshots
       - ./test-results:/app/test-results
       - ./allure-results:/app/allure-results
+
+volumes:
+  mongo_data:

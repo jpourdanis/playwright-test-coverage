@@ -49,6 +49,7 @@
     "@cucumber/cucumber": "^12.7.0",
     "@types/node": "^22.13.10",
     "allure-playwright": "^3.5.0",
+    "http-proxy-middleware": "^3.0.5",
     "playwright-bdd": "^8.4.2"
   }
 }

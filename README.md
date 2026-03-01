@@ -1,7 +1,7 @@
 # Test Automation Best Practices in Action
 
 [![Coverage Status](https://coveralls.io/repos/github/jpourdanis/playwright-test-coverage/badge.svg?branch=main)](https://coveralls.io/github/jpourdanis/playwright-test-coverage?branch=main)
-[![CI](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/nodejs.yml/badge.svg)](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/nodejs.yml)
+[![CI](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/ci.yml/badge.svg)](https://github.com/jpourdanis/playwright-test-coverage/actions/workflows/ci.yml)
 
 ![Demo Animation](demo.webp)
 
@@ -651,7 +651,7 @@ npm run test:bdd
 
 ### 11. Nightly Builds & Scheduled Playwright Runs
 
-**File:** [`.github/workflows/nodejs.yml`](/.github/workflows/nodejs.yml)
+**File:** [`.github/workflows/ci.yml`](/.github/workflows/ci.yml)
 
 #### What is it?
 
@@ -691,9 +691,25 @@ This guarantees an autonomous system health check every day.
 ### Installation
 
 ```bash
+# Install frontend dependencies
 npm install
 npx playwright install
+
+# Install backend dependencies
+cd server
+npm install
+cd ..
 ```
+
+### Running the application
+
+To run the full stack (React frontend + Express backend + MongoDB), use Docker Compose:
+
+```bash
+docker compose up -d
+```
+The React app will be available at `http://localhost:3000` and the API will run on port `5001`. 
+> **Note:** We use port `5001` instead of `5000` because macOS Monterey and later reserves port `5000` for its AirPlay Receiver service, which causes an HTTP 403 Forbidden conflict.
 
 ### Running tests locally
 
@@ -725,6 +741,9 @@ src/
 │   ├── el.json                  # Greek translation file
 │   ├── en.json                  # English translation file (default)
 │   └── es.json                  # Spanish translation file
+server/
+├── index.js                     # Express API Backend & MongoDB Seed
+├── Dockerfile                   # Docker configuration for backend
 e2e/
 ├── features/
 │   └── home.feature             # Gherkin BDD scenarios

@@ -17,9 +17,7 @@ When("I click the {string} color button", async ({}, color: string) => {
 });
 
 Then("the active color text should be {string}", async ({}, hex: string) => {
-  const text = await homePage.getCurrentColorText();
-  const actualHex = extractHexColor(text);
-  expect(`#${actualHex}`).toBe(hex);
+  await expect(homePage.currentColorText).toContainText(hex);
 });
 
 Then("the background color should be {string}", async ({}, rgb: string) => {
