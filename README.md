@@ -21,6 +21,7 @@ A comprehensive reference project demonstrating **senior-level QA engineering be
   - [8. Allure Reports with Historical Data & Flaky Test Detection](#8-allure-reports-with-historical-data--flaky-test-detection)
   - [9. Cross-Browser Testing Strategy](#9-cross-browser-testing-strategy)
   - [10. Behavior-Driven Development (BDD) with Cucumber](#10-behavior-driven-development-bdd-with-cucumber)
+  - [11. Nightly Builds & Scheduled Playwright Runs](#11-nightly-builds--scheduled-playwright-runs)
 - [Getting Started](#getting-started)
 
 ---
@@ -645,6 +646,38 @@ Execute the BDD tests specifically:
 ```bash
 npm run test:bdd
 ```
+
+---
+
+### 11. Nightly Builds & Scheduled Playwright Runs
+
+**File:** [`.github/workflows/nodejs.yml`](/.github/workflows/nodejs.yml)
+
+#### What is it?
+
+A scheduled Continuous Integration (CI) run that executes the entire test suite unconditionally at a specific time every day (e.g., midnight), regardless of whether any commits were pushed.
+
+#### Why it matters
+
+- **Cross-Browser Verification** — As discussed in the [Cross-Browser Testing Strategy](#9-cross-browser-testing-strategy), running every test on Firefox, WebKit, and Chrome on every single Pull Request can severely drag down performance. Nightly builds allow you to run the **complete deep-dive matrix** covering all supported platform, OS constraints, and scenarios while the team is asleep.
+- **External Dependency Monitoring** — Real-world apps depend on third-party APIs, CDNs, or downstream services that are frequently out of your control. If a third-party gateway changes its response payload silently, a scheduled regression test will report the failure before morning.
+- **Flaky Test Identification** — Flaky tests manifest more accurately when tested passively alongside other background systemic disturbances. Finding these via scheduled runs increases confidence during fast-moving days.
+
+#### How to implement
+
+Using GitHub actions, we configure the `schedule` keyword paired with a standard [cron syntax representation](https://crontab.guru/):
+
+```yaml
+on:
+  push:
+    branches: [main, gh-pages]
+  pull_request:
+    branches: [main, gh-pages]
+  schedule:
+    - cron: '0 0 * * *' # Executes daily at Midnight UTC
+```
+
+This guarantees an autonomous system health check every day.
 
 ---
 

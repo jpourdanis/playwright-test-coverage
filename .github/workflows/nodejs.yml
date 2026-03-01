@@ -4,6 +4,8 @@ on:
     branches: [main, gh-pages]
   pull_request:
     branches: [main, gh-pages]
+  schedule:
+    - cron: '0 0 * * *'
 permissions:
   contents: write
   pages: write
