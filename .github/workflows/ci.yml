@@ -30,7 +30,7 @@ jobs:
 
       - name: Start app service (Docker Compose)
         run: |
-          docker compose up -d --build
+          docker compose up -d --build app api mongo
 
       - name: Wait for http://localhost:3000 to be ready
         run: |
