@@ -44,6 +44,18 @@ jobs:
             sleep 2
           done
 
+      - name: Wait for http://localhost:5001/api/colors to be ready
+        run: |
+          echo "Waiting for http://localhost:5001/api/colors to be ready..."
+          for i in {1..60}; do
+            if curl -sSf http://localhost:5001/api/colors > /dev/null; then
+              echo "API is up"
+              break
+            fi
+            echo "Waiting... ($i)"
+            sleep 2
+          done
+
       - name: Run end-to-end tests (host Playwright)
         run: npm test
 
