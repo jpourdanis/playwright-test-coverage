@@ -37,10 +37,10 @@ const config: PlaywrightTestConfig = {
     },
     {
       name: "BDD",
+      testDir,
       use: {
         ...devices["Desktop Chrome"],
       },
-      testMatch: /.*\.feature\.spec.*$/,
     },
     ...(process.env.CROSS_BROWSER === "true"
       ? [
