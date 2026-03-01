@@ -11,7 +11,7 @@ services:
       - mongo
     environment:
       - USE_BABEL_PLUGIN_ISTANBUL=1
-      - NODE_OPTIONS=--openssl-legacy-provider
+      - NODE_OPTIONS=--openssl-legacy-provider --dns-result-order=ipv4first
       - PROXY_API_URL=http://api:5001
     volumes:
       - ./src:/app/src
