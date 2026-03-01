@@ -19,6 +19,8 @@ A comprehensive reference project demonstrating **senior-level QA engineering be
   - [6. E2E Code Coverage](#6-e2e-code-coverage)
   - [7. Consistent Cross-Platform Testing with Docker](#7-consistent-cross-platform-testing-with-docker)
   - [8. Allure Reports with Historical Data & Flaky Test Detection](#8-allure-reports-with-historical-data--flaky-test-detection)
+  - [9. Cross-Browser Testing Strategy](#9-cross-browser-testing-strategy)
+  - [10. Behavior-Driven Development (BDD) with Cucumber](#10-behavior-driven-development-bdd-with-cucumber)
 - [Getting Started](#getting-started)
 
 ---
@@ -588,6 +590,64 @@ npm run test:cross-browser
 
 ---
 
+### 10. Behavior-Driven Development (BDD) with Cucumber
+
+**Files:** [`e2e/features/home.feature`](/e2e/features/home.feature) · [`e2e/tests/bdd.spec.ts`](/e2e/tests/bdd.spec.ts)
+
+#### What is it?
+
+Behavior-Driven Development (BDD) closes the gap between business stakeholders and QA engineers by expressing tests in plain English using Gherkin syntax. We use [`playwright-bdd`](https://github.com/vitalets/playwright-bdd) to seamlessly compile `.feature` files into native Playwright tests.
+
+#### Why it matters
+
+- **Living Documentation** — Your test artifacts serve as the actual source of truth for product requirements.
+- **Improved Collaboration** — Product Managers can review or even write the Gherkin scenarios without needing to understand TypeScript or Playwright APIs.
+- **Reusability** — The step definitions (`bdd.spec.ts`) leverage the same Page Object Models used by standard end-to-end tests, maximizing reusability and reducing duplication.
+
+#### How to implement
+
+**Step 1:** Write a Gherkin feature file outlining the desired behavior:
+
+```gherkin
+# e2e/features/home.feature
+Feature: Home Page Background Color
+
+  Scenario Outline: Change background color
+    Given I am on the home page
+    When I click the "<color>" color button
+    Then the background color should be "<rgb>"
+
+    Examples:
+      | color     | rgb                |
+      | Turquoise | rgb(26, 188, 156)  |
+```
+
+**Step 2:** Write the Step Definitions using Playwright and your Page Objects:
+
+```typescript
+// e2e/tests/bdd.spec.ts
+import { createBdd } from "playwright-bdd";
+import { HomePage } from "../pages/HomePage";
+
+const { Given, When, Then } = createBdd();
+let homePage: HomePage;
+
+Given("I am on the home page", async ({ page }) => {
+  homePage = new HomePage(page);
+  await homePage.goto();
+});
+// ... Map other steps
+```
+
+#### How to verify
+
+Execute the BDD tests specifically:
+```bash
+npm run test:bdd
+```
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -619,17 +679,29 @@ npx playwright test --ui
 
 # Run with coverage
 npm run coverage
+
+# Run BDD (Cucumber) tests
+npm run test:bdd
 ```
 
 ### Project structure
 
-```
+```text
+src/
+├── locales/
+│   ├── el.json                  # Greek translation file
+│   ├── en.json                  # English translation file (default)
+│   └── es.json                  # Spanish translation file
 e2e/
+├── features/
+│   └── home.feature             # Gherkin BDD scenarios
 ├── pages/
 │   └── HomePage.ts              # Page Object Model
 ├── tests/
-│   ├── a11y.spec.ts             # Accessibility testing
+│   ├── a11y.spec.ts             # Accessibility testing (with i18n support)
+│   ├── bdd.spec.ts              # Step definitions for BDD tests
 │   ├── coverage.spec.ts         # E2E tests with code coverage
+│   ├── cross-browser.spec.ts    # Cross-browser testing strategy
 │   ├── data-driven.spec.ts      # Data-driven testing
 │   ├── network-mocking.spec.ts  # Network mocking & interception
 │   ├── pom-refactored.spec.ts   # POM demonstration

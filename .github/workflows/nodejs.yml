@@ -45,6 +45,9 @@ jobs:
       - name: Run end-to-end tests (host Playwright)
         run: npm test
 
+      - name: Run BDD tests (host Playwright)
+        run: npm run test:bdd
+
       - name: Run cross-browser compatibility tests (host Playwright)
         run: npm run test:cross-browser
 

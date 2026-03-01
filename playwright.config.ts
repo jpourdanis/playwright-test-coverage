@@ -1,4 +1,10 @@
 import { PlaywrightTestConfig, devices } from "@playwright/test";
+import { defineBddConfig } from "playwright-bdd";
+
+const testDir = defineBddConfig({
+  features: "e2e/features/*.feature",
+  steps: "e2e/tests/bdd.spec.ts",
+});
 
 const config: PlaywrightTestConfig = {
   // Directory containing Playwright tests
@@ -26,6 +32,15 @@ const config: PlaywrightTestConfig = {
       use: {
         ...devices["Desktop Chrome"],
       },
+      // Exclude BDD tests from the default Chrome run to avoid duplicate runs
+      testIgnore: /.*\.feature\.spec.*$/, 
+    },
+    {
+      name: "BDD",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+      testMatch: /.*\.feature\.spec.*$/,
     },
     ...(process.env.CROSS_BROWSER === "true"
       ? [
@@ -57,6 +72,7 @@ const config: PlaywrightTestConfig = {
     ? [
         ["allure-playwright"],
         ["list"],
+        ["html", { open: "never" }],
       ]
     : [
         ["html", { open: "never" }],
