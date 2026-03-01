@@ -30,7 +30,7 @@ jobs:
 
       - name: Start app service (Docker Compose)
         run: |
-          docker compose up -d --build app
+          docker compose up -d --build
 
       - name: Wait for http://localhost:3000 to be ready
         run: |
