@@ -35,6 +35,7 @@ services:
       - MONGO_URI=mongodb://mongo:27017/colorsdb
     volumes:
       - ./server:/app
+      - /app/node_modules
 
   mongo:
     image: mongo:latest
