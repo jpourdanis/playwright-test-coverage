@@ -27,9 +27,10 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5001/api/colors"]
+      test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:5001/api/colors', (r) => { let d = ''; r.on('data', c => d += c); r.on('end', () => process.exit(r.statusCode === 200 ? 0 : 1)); }).on('error', () => process.exit(1));"]
       interval: 5s
       timeout: 5s
+      start_period: 15s
       retries: 10
     environment:
       - MONGO_URI=mongodb://mongo:27017/colorsdb
