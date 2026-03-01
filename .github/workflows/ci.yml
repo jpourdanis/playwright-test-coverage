@@ -30,6 +30,8 @@ jobs:
 
       - name: Start app service (Docker Compose)
         run: |
+          cd server && npm ci
+          cd ..
           docker compose up -d --build app api mongo
 
       - name: Wait for http://127.0.0.1:3000 to be ready
