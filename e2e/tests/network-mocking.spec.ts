@@ -1,5 +1,6 @@
 import { test, expect } from "../baseFixtures";
 import { HomePage } from "../pages/HomePage";
+import enTranslations from "../../src/locales/en.json";
 
 /**
  * Test Suite: Network Mocking & Interception
@@ -32,7 +33,7 @@ test.describe("Network Mocking & Interception", () => {
     await homePage.goto();
 
     // The image won't load, but it should still be in the DOM
-    const logoImg = page.locator("img.App-logo");
+    const logoImg = page.getByRole("img", { name: "logo" });
     
     // We expect the image element to exist
     await expect(logoImg).toBeVisible();
@@ -42,27 +43,81 @@ test.describe("Network Mocking & Interception", () => {
   });
 
   /**
-   * Test: Mock API response (example demonstration)
+   * Test: Mock API response with non-existent data
    * 
-   * Demonstrates how to fulfill an intercepted request with mock JSON data.
-   * Useful for testing specific frontend UI states like loaded data or errors 
-   * without creating records in a database.
+   * Demonstrates how to fulfill an intercepted request with mock JSON data
+   * that doesn't exist in the real database.
    */
-  test("mock API response (example demonstration)", async ({ page }) => {
-    // Imagine our app fetches a greeting phrase from an API.
-    // We can mock that response before loading the page.
-    await page.route("**/api/config", async (route) => {
+  test("should display colors that do not exist in the database", async ({ page }) => {
+    // Intercept the initial colors fetch and provide custom mock data
+    await page.route("**/api/colors", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ defaultColor: "Red" }),
+        body: JSON.stringify([{ name: "Magenta", hex: "#ff00ff" }]),
+      });
+    });
+
+    // Intercept the specific color fetch
+    await page.route("**/api/colors/Magenta", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ name: "Magenta", hex: "#ff00ff" }),
       });
     });
 
     await homePage.goto();
     
-    // Even though the app doesn't currently use this API, this demonstrates
-    // the pattern of mocking data for tests instead of hitting real backends.
-    await expect(homePage.header).toBeVisible();
+    // The button for our mocked color should be visible
+    const customBtn = page.getByRole("button", { name: "colors.magenta" });
+    await expect(customBtn).toBeVisible();
+    
+    // Click the mocked color button
+    await customBtn.click();
+    
+    // Verify the background color changes to our mocked hex value
+    await expect(homePage.header).toHaveCSS("background-color", "rgb(255, 0, 255)");
+  });
+
+  /**
+   * Test: Handle color not found in the database
+   * 
+   * Demonstrates mocking an API error response (e.g. 404 Not Found)
+   * and verifying that the application handles it gracefully.
+   */
+  test("should gracefully handle a color not found in the database", async ({ page }) => {
+    // Verify that the UI handles a 404 gracefully without changing the background
+    await page.route("**/api/colors", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { name: "Turquoise", hex: "#1abc9c" },
+          { name: "Red", hex: "#e74c3c" }
+        ]),
+      });
+    });
+
+    // Intercept the request for 'Red' and simulate a 404 Not Found response
+    await page.route("**/api/colors/Red", async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Color not found" }),
+      });
+    });
+
+    await homePage.goto();
+    
+    // The background should initially be the first color (Turquoise: #1abc9c / rgb(26, 188, 156))
+    await expect(homePage.header).toHaveCSS("background-color", "rgb(26, 188, 156)");
+    
+    // Attempt to click the 'Red' button, which will trigger the 404
+    const redBtn = page.getByRole("button", { name: enTranslations.colors.red });
+    await redBtn.click();
+
+    // The background color should not have changed, since the fetch failed
+    await expect(homePage.header).toHaveCSS("background-color", "rgb(26, 188, 156)");
   });
 });

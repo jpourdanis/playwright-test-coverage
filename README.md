@@ -207,24 +207,79 @@ test("should handle missing image gracefully", async ({ page }) => {
   await page.goto("/");
 
   // The image element should still exist in the DOM with its alt text
-  const logoImg = page.locator("img.App-logo");
+  const logoImg = page.getByRole("img", { name: "logo" });
   await expect(logoImg).toHaveAttribute("alt", "logo");
 });
 ```
 
-**Mocking an API response** (fulfilling with custom data):
+**Mocking data that doesn't exist in the database** (e.g., a brand-new color):
 
 ```typescript
-test("mock API response", async ({ page }) => {
-  await page.route("**/api/config", async (route) => {
+test("should display colors that do not exist in the database", async ({ page }) => {
+  // Mock the /api/colors endpoint to return a color not in the real DB
+  await page.route("**/api/colors", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ defaultColor: "Red" }),
+      body: JSON.stringify([{ name: "Magenta", hex: "#ff00ff" }]),
     });
   });
-  await page.goto("/");
-  // Assert the UI reflects the mocked data
+
+  // Also mock the individual color endpoint
+  await page.route("**/api/colors/Magenta", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ name: "Magenta", hex: "#ff00ff" }),
+    });
+  });
+
+  await homePage.goto();
+
+  // Use accessible locators to find and click the mocked color button
+  const customBtn = page.getByRole("button", { name: "colors.magenta" });
+  await customBtn.click();
+
+  // Verify the background reflects the mocked hex value
+  await expect(homePage.header).toHaveCSS("background-color", "rgb(255, 0, 255)");
+});
+```
+
+**Handling a color not found (404 response)**:
+
+```typescript
+import enTranslations from "../../src/locales/en.json";
+
+test("should gracefully handle a color not found in the database", async ({ page }) => {
+  await page.route("**/api/colors", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        { name: "Turquoise", hex: "#1abc9c" },
+        { name: "Red", hex: "#e74c3c" },
+      ]),
+    });
+  });
+
+  // Simulate a 404 for the "Red" color endpoint
+  await page.route("**/api/colors/Red", async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Color not found" }),
+    });
+  });
+
+  await homePage.goto();
+  await expect(homePage.header).toHaveCSS("background-color", "rgb(26, 188, 156)");
+
+  // Use i18n-aware accessible locator for the button
+  const redBtn = page.getByRole("button", { name: enTranslations.colors.red });
+  await redBtn.click();
+
+  // Background should not have changed since the API returned a 404
+  await expect(homePage.header).toHaveCSS("background-color", "rgb(26, 188, 156)");
 });
 ```
 

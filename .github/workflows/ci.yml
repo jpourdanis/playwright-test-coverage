@@ -44,6 +44,18 @@ jobs:
             sleep 2
           done
 
+      - name: Wait for http://127.0.0.1:5001/api/colors to be ready (API direct)
+        run: |
+          echo "Waiting for API on port 5001..."
+          for i in {1..60}; do
+            if curl -sSf http://127.0.0.1:5001/api/colors > /dev/null; then
+              echo "API is up on port 5001"
+              break
+            fi
+            echo "Waiting... ($i)"
+            sleep 2
+          done
+
       - name: Wait for http://127.0.0.1:3000/api/colors to be ready
         run: |
           echo "Waiting for http://127.0.0.1:3000/api/colors to be ready..."

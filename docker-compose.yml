@@ -7,8 +7,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
-      - mongo
+      api:
+        condition: service_healthy
     environment:
       - USE_BABEL_PLUGIN_ISTANBUL=1
       - NODE_OPTIONS=--openssl-legacy-provider --dns-result-order=ipv4first
@@ -24,7 +24,13 @@ services:
     ports:
       - "5001:5001"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5001/api/colors"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     environment:
       - MONGO_URI=mongodb://mongo:27017/colorsdb
     volumes:
@@ -36,6 +42,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: mongosh --eval "db.runCommand('ping').ok" --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   playwright:
     build:
