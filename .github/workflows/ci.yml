@@ -44,11 +44,11 @@ jobs:
             sleep 2
           done
 
-      - name: Wait for http://localhost:5001/api/colors to be ready
+      - name: Wait for http://localhost:3000/api/colors to be ready
         run: |
-          echo "Waiting for http://localhost:5001/api/colors to be ready..."
+          echo "Waiting for http://localhost:3000/api/colors to be ready..."
           for i in {1..60}; do
-            if curl -sSf http://localhost:5001/api/colors > /dev/null; then
+            if curl -sSf http://localhost:3000/api/colors > /dev/null; then
               echo "API is up"
               break
             fi
